@@ -26,5 +26,5 @@ This recipe is based on Centos 7 with EPEL repo. Of course you can use RHEL or S
 
 With no more delay, find our recipe in the following link:
 
-* [A Redmine Installation with Gitolite Integration on Centos 7](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/misc/redmine-with-gitolite/RECIPE-redmine-with-gitolite.md "A Redmine Installation with Gitolite Integration on Centos 7")
+* [A Redmine Installation with Gitolite Integration on Centos 7](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/misc/redmine-with-gitolite/RECIPE-redmine-with-gitolite.md "A Redmine Installation with Gitolite Integration on Centos 7")
 

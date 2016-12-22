@@ -26,5 +26,5 @@ We'll explore in our recipes how to properlly install it on an already-working c
 
 In the following links you'll find our two recipes. The first one uses Centos 7 packages (available on Centos Cloud Repo for Liberty and Mitaka), the second one uses the source packages from GIT EC2 Project Site. A full LAB is included in the Centos 7 recipe.
 
-* [RECIPE: OpenStack AWS-EC2 Compatibility and LAB - Centos 7, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/openstack-aws-ec2-compatibility/RECIPE-aws-ec2-openstack-compat-lab.md "OpenStack AWS-EC2 Compat - Centos 7")
-* [RECIPE: OpenStack AWS-EC2 Compatibility - Ubuntu 14.04lts, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/openstack-aws-ec2-compatibility/RECIPE-aws-ec2-openstack-compat-ubuntu.md "OpenStack AWS-EC2 Compat - Ubuntu 1404lts")
+* [RECIPE: OpenStack AWS-EC2 Compatibility and LAB - Centos 7, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/openstack-aws-ec2-compatibility/RECIPE-aws-ec2-openstack-compat-lab.md "OpenStack AWS-EC2 Compat - Centos 7")
+* [RECIPE: OpenStack AWS-EC2 Compatibility - Ubuntu 14.04lts, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/openstack-aws-ec2-compatibility/RECIPE-aws-ec2-openstack-compat-ubuntu.md "OpenStack AWS-EC2 Compat - Ubuntu 1404lts")

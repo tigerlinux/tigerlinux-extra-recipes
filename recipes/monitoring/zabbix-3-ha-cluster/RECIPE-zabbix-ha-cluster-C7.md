@@ -16,7 +16,7 @@ Create a highly available Zabbix 3 cluster with highly available, horizontally s
 
 ## Where are we going to install it ?:
 
-* For the database, we'll use this site recipe for MariaDB 10.1 cluster on centos 7, balanced with OpenStack LBaaS (all access trough a single VIP). The cluster is using 3 nodes (magic number). Recipe: **https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/databases/mariadb-cluster-centos7/RECIPE-Cluster-MariaDB-10.1-C7.md**
+* For the database, we'll use this site recipe for MariaDB 10.1 cluster on centos 7, balanced with OpenStack LBaaS (all access trough a single VIP). The cluster is using 3 nodes (magic number). Recipe: **https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/databases/mariadb-cluster-centos7/RECIPE-Cluster-MariaDB-10.1-C7.md**
 * For the Zabbix Cluster, we'll use two Centos 7 Servers, with EPEL repository installed, SELINUX disabled, FirewallD disabled (we are using the Cloud security groups).
 
 Our pre-created database cluster VIP is: 172.16.10.221, port 3306 (OpenStack LBaaS Load Balancer, with source-ip based session persistence, and least_connections balancing metod).

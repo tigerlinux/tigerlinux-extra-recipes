@@ -41,6 +41,6 @@ About the OS: You need for this recipe CENTOS 7 Fully updated with EPEL reposito
 
 ## What files you'll find here ?:
 
-* [RECIPE-PostgreSQL-HA-DRBD-C7.md: Our recipe, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/databases/postgresql-cluster-drbd-centos7/RECIPE-PostgreSQL-HA-DRBD-C7.md "Our PostgreSQL HA-DRBD Recipe")
-* [scripts: Directory with scripts referenced by our recipe.](https://github.com/tigerlinux/tigerlinux.github.io/tree/master/recipes/databases/postgresql-cluster-drbd-centos7/scripts "Our Recipe Support Scripts")
+* [RECIPE-PostgreSQL-HA-DRBD-C7.md: Our recipe, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/databases/postgresql-cluster-drbd-centos7/RECIPE-PostgreSQL-HA-DRBD-C7.md "Our PostgreSQL HA-DRBD Recipe")
+* [scripts: Directory with scripts referenced by our recipe.](https://github.com/tigerlinux/tigerlinux-extra-recipes/tree/master/recipes/databases/postgresql-cluster-drbd-centos7/scripts "Our Recipe Support Scripts")
 

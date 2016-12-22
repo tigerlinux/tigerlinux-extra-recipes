@@ -24,4 +24,4 @@ This recipe just will show you what do you need to reconfigure in OpenStack in o
 
 Just one and very simple recipe that will allow you to modify cinder and horizon in order to enable Cinder Backups with Swift Storage Backend.
 
-* [RECIPE: Cinder Backups with SWIFT, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/cinder-backups-with-swift/RECIPE-cinder-backups-with-swift.md "OpenStack Cinder Backups with Swift")
+* [RECIPE: Cinder Backups with SWIFT, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/cinder-backups-with-swift/RECIPE-cinder-backups-with-swift.md "OpenStack Cinder Backups with Swift")

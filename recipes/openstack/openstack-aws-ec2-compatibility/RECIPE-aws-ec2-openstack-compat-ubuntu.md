@@ -464,7 +464,7 @@ aws --endpoint-url http://192.168.56.101:8788/services/Cloud ec2 describe-subnet
 
 This finish what we wanted to cover in this recipe. For a more complete LAB, with real EC2-Classic and EC2-VPC tests, please see our Centos-7 based recipe in the following link:
 
-* [RECIPE: OpenStack AWS-EC2 Compatibility and LAB - Centos 7, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/openstack-aws-ec2-compatibility/RECIPE-aws-ec2-openstack-compat-lab.md "OpenStack AWS-EC2 Compat - Centos 7")
+* [RECIPE: OpenStack AWS-EC2 Compatibility and LAB - Centos 7, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/openstack-aws-ec2-compatibility/RECIPE-aws-ec2-openstack-compat-lab.md "OpenStack AWS-EC2 Compat - Centos 7")
 
 END.-
 

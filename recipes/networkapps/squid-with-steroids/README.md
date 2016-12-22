@@ -34,5 +34,5 @@ This recipe is based on Centos 7 with EPEL repo. Of course you can use RHEL or S
 
 With no more delay, find our recipe in the following link:
 
-* [A Squid Installation with Blacklisting and Virus Scanning](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/networkapps/squid-with-steroids/RECIPE-Squid-with-steroids.md "A Squid Installation with Blacklisting and Virus Scanning")
+* [A Squid Installation with Blacklisting and Virus Scanning](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/networkapps/squid-with-steroids/RECIPE-Squid-with-steroids.md "A Squid Installation with Blacklisting and Virus Scanning")
 

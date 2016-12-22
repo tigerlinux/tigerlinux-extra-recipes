@@ -20,7 +20,7 @@ This solution is based on one of my former recipes in this site (MariaDB 10.1 cl
 
 First the database cluster: Our solution uses MariaDB 10.1 backend, load-balanced with OpenStack LBaaS (single VIP). This MariaDB Cluster is based on 3 nodes (magic number), multi-master, asynchronous model. The recipe used is in this site, and referenced by the following link:
 
-* https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/databases/mariadb-cluster-centos7/RECIPE-Cluster-MariaDB-10.1-C7.md
+* https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/databases/mariadb-cluster-centos7/RECIPE-Cluster-MariaDB-10.1-C7.md
 
 The Zabbix Service is based on two Centos 7 O/S servers (EPEL Installed, SELINUX/FirewallD disabled), in an active/pasive model using Pacemaker/Corosync. The VIP is floating (declared as address-pair in OpenStack) an configured as a corosync/pacemaker resource. The Zabbix and httpd services are also managed by pacemaker/corosync.
 
@@ -42,6 +42,6 @@ About the software: You'll need a machine with the following software requerimen
 
 ## What files you'll find here ?:
 
-* [RECIPE-zabbix-ha-cluster-C7.md: Our recipe, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/monitoring/zabbix-3-ha-cluster/RECIPE-zabbix-ha-cluster-C7.md "Zabbix 3 H.A. Recipe")
-* [scripts: Scripts referenced/created for this recipe.](https://github.com/tigerlinux/tigerlinux.github.io/tree/master/recipes/monitoring/zabbix-3-ha-cluster/scripts "Our Zabbix 3 Recipe Support Scripts")
+* [RECIPE-zabbix-ha-cluster-C7.md: Our recipe, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/monitoring/zabbix-3-ha-cluster/RECIPE-zabbix-ha-cluster-C7.md "Zabbix 3 H.A. Recipe")
+* [scripts: Scripts referenced/created for this recipe.](https://github.com/tigerlinux/tigerlinux-extra-recipes/tree/master/recipes/monitoring/zabbix-3-ha-cluster/scripts "Our Zabbix 3 Recipe Support Scripts")
 

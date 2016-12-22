@@ -47,6 +47,6 @@ About the software: You'll need a machine with the following software requerimen
 
 ## What files you'll find here ?:
 
-* [RECIPE-icinga-automated-cloud-install.md: Our recipe, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/monitoring/icinga-automated-install-for-the-cloud/RECIPE-icinga-automated-cloud-install.md "Icinga Automated Install for the Cloud")
-* [scripts: Scripts referenced/created for this recipe.](https://github.com/tigerlinux/tigerlinux.github.io/tree/master/recipes/monitoring/icinga-automated-install-for-the-cloud/scripts "Icinga Automated Install Scripts")
+* [RECIPE-icinga-automated-cloud-install.md: Our recipe, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/monitoring/icinga-automated-install-for-the-cloud/RECIPE-icinga-automated-cloud-install.md "Icinga Automated Install for the Cloud")
+* [scripts: Scripts referenced/created for this recipe.](https://github.com/tigerlinux/tigerlinux-extra-recipes/tree/master/recipes/monitoring/icinga-automated-install-for-the-cloud/scripts "Icinga Automated Install Scripts")
 

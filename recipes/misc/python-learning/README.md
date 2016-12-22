@@ -32,7 +32,7 @@ Yes... for almost all the scripts you'll find a "sample-output.txt" file with th
 
 Then, our directories here:
 
-* [PYTHON CORE PROGRAMMING EXERCISES](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/misc/python-learning/CORE "Python CORE Programming exercises")
-* [PYHTON SPECIAL CASES](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/misc/python-learning/SPECIAL "Python SPECIAL Programming cases")
+* [PYTHON CORE PROGRAMMING EXERCISES](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/misc/python-learning/CORE "Python CORE Programming exercises")
+* [PYHTON SPECIAL CASES](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/misc/python-learning/SPECIAL "Python SPECIAL Programming cases")
 
 END.-

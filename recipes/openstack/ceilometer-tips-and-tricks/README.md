@@ -22,5 +22,5 @@ Mostly, practical usage of ceilometer metrics and alarms. Normally, most users b
 
 Then, for the moment, we'll show you two recipes here: One who will show you the most usefull tips-and-trics for obtain what you need, and the other, for eficient and creative use of ceilometer alarming system.
 
-* [RECIPE: Ceilometer tips-and-tricks, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/ceilometer-tips-and-tricks/RECIPE-ceilometer-tips-and-tricks.md "Ceilometer Tips-and-Trics Recipe")
-* [RECIPE: Ceilometer Alarms, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/ceilometer-tips-and-tricks/RECIPE-ceilometer-alarms.md "Ceilometer Alarms - A practical Example")
+* [RECIPE: Ceilometer tips-and-tricks, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/ceilometer-tips-and-tricks/RECIPE-ceilometer-tips-and-tricks.md "Ceilometer Tips-and-Trics Recipe")
+* [RECIPE: Ceilometer Alarms, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/ceilometer-tips-and-tricks/RECIPE-ceilometer-alarms.md "Ceilometer Alarms - A practical Example")

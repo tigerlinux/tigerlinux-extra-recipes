@@ -11,7 +11,7 @@
 
 ## Introduction. From tutorial part 1 to tutorial part 2:
 
-The first part of our juju tutorials (available [here](https://github.com/tigerlinux/tigerlinux.github.io/tree/master/recipes/misc/juju-tut-part1)) explored the very basics of Juju using manual clouds and lxd. This time, we'll extend our environment to OpenStack. 
+The first part of our juju tutorials (available [here](https://github.com/tigerlinux/tigerlinux-extra-recipes/tree/master/recipes/misc/juju-tut-part1)) explored the very basics of Juju using manual clouds and lxd. This time, we'll extend our environment to OpenStack. 
 
 In this part-two juju tutorial, we'll implement juju in order to control deployments in a Mitaka-based OpenStack private cloud.
 
@@ -625,7 +625,7 @@ loadbalancer  wordpress01-in-lxd  wordpress01-in-lxd  peer
 
 Note something here: The container-based applications are restricted to the node where the container machine is running. In practical terms that means: the applications on the containers will only be reachable from inside the machine running the container. If you want to allow the container-based applications to be reacheable from the outside, add IPTABLES rules. Because this was already explained on our first JUJU tutorial, please refer to the following link for more information about how to allow the containers to be reacheable by using IPTABLES:
 
-- [Juju tutorial part 1 - LXD Containers section.](https://github.com/tigerlinux/tigerlinux.github.io/tree/master/recipes/misc/juju-tut-part1#extending-our-cloud-more-adding-lxd-to-the-scene)
+- [Juju tutorial part 1 - LXD Containers section.](https://github.com/tigerlinux/tigerlinux-extra-recipes/tree/master/recipes/misc/juju-tut-part1#extending-our-cloud-more-adding-lxd-to-the-scene)
 
 
 ## Some extra notes.

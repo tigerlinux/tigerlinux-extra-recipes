@@ -118,12 +118,12 @@ SOGO:
 
 We devided our recipes "by layer" in the following order:
 
-* [Base Environment Preparation](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/00-Base-preparation.md)
-* [POP-IMAP-SMTP Delivery Services](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/01-POP-IMAP-LDA-Layer.md)
-* [SMTP-OUT Services](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/02-SMTP-OUT-Layer.md)
-* [SMTP-IN Services](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/03-SMTP-IN-Layer.md)
-* [SoGo-Based WEBMAIL/Groupware Services](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/04-SOGO-Webmail-Layer.md)
-* [EXTRA: SOLR for FTS at IMAP Level](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/05-EXTRA-SOLR-FTS.md)
-* [EXTRA: SSL Encrypted Services](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/06-EXTRA-SSL-Services.md)
+* [Base Environment Preparation](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/00-Base-preparation.md)
+* [POP-IMAP-SMTP Delivery Services](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/01-POP-IMAP-LDA-Layer.md)
+* [SMTP-OUT Services](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/02-SMTP-OUT-Layer.md)
+* [SMTP-IN Services](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/03-SMTP-IN-Layer.md)
+* [SoGo-Based WEBMAIL/Groupware Services](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/04-SOGO-Webmail-Layer.md)
+* [EXTRA: SOLR for FTS at IMAP Level](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/05-EXTRA-SOLR-FTS.md)
+* [EXTRA: SSL Encrypted Services](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/ispapps/multi-layer-multi-server-email-platform/06-EXTRA-SSL-Services.md)
 
 END.-

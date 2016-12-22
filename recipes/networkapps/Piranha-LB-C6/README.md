@@ -42,4 +42,4 @@ I have to let you know: I have this kind of balancer working in production, load
 
 With no more delay, find our recipe in the following link:
 
-* [A Piranha-Based SIP Load Balancer for Aterisk](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/networkapps/Piranha-LB-C6/RECIPE-Piranha-LB-For-SIP.md "A Piranha-Based SIP Load Balancer for Asterisk")
+* [A Piranha-Based SIP Load Balancer for Aterisk](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/networkapps/Piranha-LB-C6/RECIPE-Piranha-LB-For-SIP.md "A Piranha-Based SIP Load Balancer for Asterisk")

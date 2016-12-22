@@ -28,6 +28,6 @@ While "up to Mitaka release" we still need to stick with Mongo (as some ceilomet
 
 Just one and very simple recipe that will allow you to install Gnocchi on Centos 7 and modify Ceilometer in order to use Gnocchi as storage backend.
 
-* [RECIPE: OpenStack Ceilometer with Gnocchi Storage Backend, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/ceilometer-with-gnocchi-backend/RECIPE-ceilometer-with-gnocchi-backend.md "OpenStack Ceilometer with Gnocchi Backend")
+* [RECIPE: OpenStack Ceilometer with Gnocchi Storage Backend, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/ceilometer-with-gnocchi-backend/RECIPE-ceilometer-with-gnocchi-backend.md "OpenStack Ceilometer with Gnocchi Backend")
 
 Remember: Gnocchi is not only a database storage solution for Ceilometer... it is a complete solution by itself !!.

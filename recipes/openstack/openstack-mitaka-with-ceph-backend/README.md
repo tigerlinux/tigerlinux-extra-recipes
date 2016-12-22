@@ -44,6 +44,6 @@ Note that the disk and network configuration is not ideal and definitively not s
 
 In order to make the lecture more easy to understand, we devided the whole thing in two recipes: The first will guide you trough the ceph cluster configuration stages, and the second trough the openstack configuration with ceph.
 
-* [RECIPE: CEPH Cluster Creation on Ubuntu 14.04lts, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/openstack-mitaka-with-ceph-backend/RECIPE-LAB-Ceph-Rados-Mitaka-PART1.md "CEPH Cluster in Ubuntu 14.04lts")
-* [RECIPE: OpenStack MITAKA Re-configuration with CEPH, in markdown format.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/openstack-mitaka-with-ceph-backend/RECIPE-LAB-Ceph-Rados-Mitaka-PART2.md "OpenStack MITAKA With CEPH")
+* [RECIPE: CEPH Cluster Creation on Ubuntu 14.04lts, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/openstack-mitaka-with-ceph-backend/RECIPE-LAB-Ceph-Rados-Mitaka-PART1.md "CEPH Cluster in Ubuntu 14.04lts")
+* [RECIPE: OpenStack MITAKA Re-configuration with CEPH, in markdown format.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/openstack-mitaka-with-ceph-backend/RECIPE-LAB-Ceph-Rados-Mitaka-PART2.md "OpenStack MITAKA With CEPH")
 

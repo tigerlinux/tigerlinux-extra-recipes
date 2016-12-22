@@ -53,16 +53,16 @@ After you pass this template to HEAT, it will create your objects and define you
 
 Our template main template is the following file:
 
-* [AutoScaling with LBaaS V2 Heat MAIN Template.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/autoscaling-with-lbaasv2/Template-AutoScaling-LBaaSV2.yaml)
+* [AutoScaling with LBaaS V2 Heat MAIN Template.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/autoscaling-with-lbaasv2/Template-AutoScaling-LBaaSV2.yaml)
 
 This template is the core of our AutoScaling+LBaaSV2 implementation. It will also require one of the two following files:
 
-* [AutoScaling Environment File - For use with heat "CLI" and locally copied "Server File".](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/autoscaling-with-lbaasv2/Template-AutoScaling-LBaaSV2-ENV-LocalCLI.yaml)
-* [AutoScaling Environment File - For use with heat "CLI" or Horizon and Web-Stored "Server File".](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/autoscaling-with-lbaasv2/Template-AutoScaling-LBaaSV2-ENV-HTTP-Server.yaml)
+* [AutoScaling Environment File - For use with heat "CLI" and locally copied "Server File".](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/autoscaling-with-lbaasv2/Template-AutoScaling-LBaaSV2-ENV-LocalCLI.yaml)
+* [AutoScaling Environment File - For use with heat "CLI" or Horizon and Web-Stored "Server File".](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/autoscaling-with-lbaasv2/Template-AutoScaling-LBaaSV2-ENV-HTTP-Server.yaml)
 
 And, the following file, which defines the server instance and the LBaaS member:
 
-* ["Server File" with "Nova Instance" and "LBaaS Member" definitions](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/openstack/autoscaling-with-lbaasv2/webserver_lb.yaml)
+* ["Server File" with "Nova Instance" and "LBaaS Member" definitions](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/openstack/autoscaling-with-lbaasv2/webserver_lb.yaml)
 
 You can use those templates with HEAT cli, or with Horizon.
 

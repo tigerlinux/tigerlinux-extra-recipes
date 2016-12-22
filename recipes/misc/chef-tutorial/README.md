@@ -31,7 +31,7 @@ Some basic concepts here first:
 
 **NOTE: We installed our machines using automated kickstart/preseed templates available here:**
 
-- [Unattended installation templates for Centos, Debian and Ubuntu.](https://github.com/tigerlinux/tigerlinux.github.io/tree/master/recipes/linux/unattended)
+- [Unattended installation templates for Centos, Debian and Ubuntu.](https://github.com/tigerlinux/tigerlinux-extra-recipes/tree/master/recipes/linux/unattended)
 
 
 ## CHEF Server basic installation:

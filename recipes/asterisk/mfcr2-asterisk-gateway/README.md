@@ -41,7 +41,7 @@ About the software: You'll need a machine with the following software requerimen
 
 ## What files you'll find here ?:
 
-* [RECIPE-gateway-asterisk-R2-Centos6.md: Our recipe, in markdown format, for Centos 6.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/asterisk/mfcr2-asterisk-gateway/RECIPE-gateway-asterisk-R2-Centos6.md "Our Asterisk R2 VoIP Gateway Recipe - Centos 6")
-* [RECIPE-gateway-asterisk-R2-Centos7.md: Our recipe, in markdown format, for Centos 7.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/asterisk/mfcr2-asterisk-gateway/RECIPE-gateway-asterisk-R2-Centos7.md "Our Asterisk R2 VoIP Gateway Recipe - Centos 7")
-* [gw-asterisk-c7-for-cloud.sh: Scripted version of our Centos 7 recipe, fully automated for running in cloud environments.](https://github.com/tigerlinux/tigerlinux.github.io/blob/master/recipes/asterisk/mfcr2-asterisk-gateway/gw-asterisk-c7-for-cloud.sh "Scripted version of our C7 Recipe")
+* [RECIPE-gateway-asterisk-R2-Centos6.md: Our recipe, in markdown format, for Centos 6.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/asterisk/mfcr2-asterisk-gateway/RECIPE-gateway-asterisk-R2-Centos6.md "Our Asterisk R2 VoIP Gateway Recipe - Centos 6")
+* [RECIPE-gateway-asterisk-R2-Centos7.md: Our recipe, in markdown format, for Centos 7.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/asterisk/mfcr2-asterisk-gateway/RECIPE-gateway-asterisk-R2-Centos7.md "Our Asterisk R2 VoIP Gateway Recipe - Centos 7")
+* [gw-asterisk-c7-for-cloud.sh: Scripted version of our Centos 7 recipe, fully automated for running in cloud environments.](https://github.com/tigerlinux/tigerlinux-extra-recipes/blob/master/recipes/asterisk/mfcr2-asterisk-gateway/gw-asterisk-c7-for-cloud.sh "Scripted version of our C7 Recipe")
 

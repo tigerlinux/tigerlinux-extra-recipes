@@ -37,8 +37,8 @@ If you are using AWS of OpenStack based instances, try to use an Image (AMI or G
 
 This solution contains two scripts:
 
-* [Cloud-ready Icinga Installation Script.](https://github.com/tigerlinux/tigerlinux.github.io/tree/master/recipes/monitoring/icinga-automated-install-for-the-cloud/scripts/icinga-automated-install-cloud.sh "Icinga Automated Install Script - Cloud Version")
-* [Very Commented Icinga Installation Script.](https://github.com/tigerlinux/tigerlinux.github.io/tree/master/recipes/monitoring/icinga-automated-install-for-the-cloud/scripts/icinga-automated-install-with-comments.sh "Icinga Automated Install Script - Commented Version")
+* [Cloud-ready Icinga Installation Script.](https://github.com/tigerlinux/tigerlinux-extra-recipes/tree/master/recipes/monitoring/icinga-automated-install-for-the-cloud/scripts/icinga-automated-install-cloud.sh "Icinga Automated Install Script - Cloud Version")
+* [Very Commented Icinga Installation Script.](https://github.com/tigerlinux/tigerlinux-extra-recipes/tree/master/recipes/monitoring/icinga-automated-install-for-the-cloud/scripts/icinga-automated-install-with-comments.sh "Icinga Automated Install Script - Commented Version")
 
 The one you want to se in order to check what it does and how it does, is the **"Commented"** version. This version has several comments on each part, so it can be used for learning. You can also run it manually inside your server, and it will do everything to get the icinga ready for the wizard-install part.
 

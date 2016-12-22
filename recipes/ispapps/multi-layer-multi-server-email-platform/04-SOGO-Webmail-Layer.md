@@ -22,7 +22,7 @@ SoGo needs 4 external dependencies in order to work:
 
 For the Database, we are going to install it in the server, but, for a more-robust and production/H.A. deployment, you should use a Database Cluster. One of our recipes is perfectly well suited for this task:
 
-* [A MariaDB Multi-master Active/Active Cluster](https://github.com/tigerlinux/tigerlinux.github.io/tree/master/recipes/databases/mariadb-cluster-centos7)
+* [A MariaDB Multi-master Active/Active Cluster](https://github.com/tigerlinux/tigerlinux-extra-recipes/tree/master/recipes/databases/mariadb-cluster-centos7)
 
 In any case, and considering a "single server" deployment, let's install the database software and prepare our database:
 
