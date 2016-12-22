@@ -1,0 +1,25 @@
+Kiki data complete: {'Name': 'Kiki', 'color': 'base white with black spots', 'weight Kg': 4.5, 'Mouse face': True, 'race': 'cat', 'Callsign': 'Ratonila'}
+Kiki is a "cat", and her color is "base white with black spots"
+Kiki's weigth is: 3.2 Kg
+Kiki complete name is "Kiki Ratonila"
+Kiki data complete: {'Name': 'Kiki', 'weight': 3.2, 'color': 'base white with black spots', 'weight Kg': 4.5, 'Mouse face': True, 'race': 'cat', 'Callsign': 'Ratonila', 'complete name': {'last': 'Ratonila', 'first': 'Kiki'}}
+Kiki data after clean up: 
+Rayita data is: {'name': 'Rayita', 'color': 'base cream-white with gray-listed spots', 'weight Kg': 3.5, 'mouse face': False, 'race': 'cat', 'callsign': 'Rayoncita de Rayon', 'complete name': {'last': 'De Rayon', 'first': 'Rayita'}}
+
+Print a sorted dict using old methods:
+('callsign', '=>', 'Rayoncita de Rayon')
+('color', '=>', 'base cream-white with gray-listed spots')
+('complete name', '=>', {'last': 'De Rayon', 'first': 'Rayita'})
+('mouse face', '=>', False)
+('name', '=>', 'Rayita')
+('race', '=>', 'cat')
+('weight Kg', '=>', 3.5)
+
+Now the same, but using "sorted()" function
+('callsign', '=>', 'Rayoncita de Rayon')
+('color', '=>', 'base cream-white with gray-listed spots')
+('complete name', '=>', {'last': 'De Rayon', 'first': 'Rayita'})
+('mouse face', '=>', False)
+('name', '=>', 'Rayita')
+('race', '=>', 'cat')
+('weight Kg', '=>', 3.5)

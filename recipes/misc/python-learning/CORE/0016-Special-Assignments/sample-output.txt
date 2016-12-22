@@ -1,0 +1,10 @@
+Kiki
+Rayita
+Negrito
+('R', 'a', 'y', 'i', 't', 'a')
+('K', 'i', 'k', 'i')
+Kiki, Rayita and Negrito are Gatos
+(0, 1, 2, 3)
+['Kiki', 'Rayita', 'Negrito']
+['Kiki', 'Rayita', 'Negrito', 'Kisa']
+['Kiki', 'Rayita', 'Negrito', 'Kisa']

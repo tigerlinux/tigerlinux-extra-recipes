@@ -1,0 +1,12 @@
+
+Original string: Panopticon, ASCII Codes: [80, 97, 110, 111, 112, 116, 105, 99, 111, 110]
+Original string: Panopticon, ASCII Codes - using MAP: [80, 97, 110, 111, 112, 116, 105, 99, 111, 110]
+Original string: Panopticon, ASCII Codes - using a comprehension: [80, 97, 110, 111, 112, 116, 105, 99, 111, 110]
+
+My list is: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+Using a function: [2, 4, 6, 8, 10]
+Using a comprehension list: [2, 4, 6, 8, 10]
+Using a filter with a lambda: [2, 4, 6, 8, 10]
+
+My nested list: ['red-one', 'red-two', 'red-three', 'blue-one', 'blue-two', 'blue-three', 'black-one', 'black-two', 'black-three']
+

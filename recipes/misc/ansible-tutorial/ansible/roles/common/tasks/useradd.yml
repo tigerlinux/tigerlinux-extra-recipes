@@ -1,0 +1,33 @@
+---
+# Create the user group:
+- name: Create user group
+  group:
+    name: "{{ user }}"
+    state: present
+
+# Create an user and set its properties
+- name: Create user account
+  user:
+    name: "{{ user }}"
+    group: "{{ user }}"
+    shell: /bin/bash
+    state: present
+
+# For the user, it creates a password using external commands
+- name: Set user password using external commands
+  shell:
+    echo "{{ user | quote }}":"{{ user | quote }}"|chpasswd
+
+# And, set sudo for the user
+- name: Set sudo for the user
+  copy:
+    dest: /etc/sudoers.d/{{ user }}
+    content: "{{ user }} ALL=(ALL) NOPASSWD:ALL\n"
+
+# Then, set the file permissions to 0440
+- name: Set permissions for sudoder file
+  file:
+    path: /etc/sudoers.d/{{ user }}
+    owner: root
+    group: root
+    mode: 0440

@@ -1,0 +1,25 @@
+
+Our original numbers here:
+1
+1.234e+50
+-24
+-1.23e-05
+
+Our numbers after some conversions:
+0
+1.0
+24
+
+('Normal division: 4.0/3.0: ', 1.3333333333333333)
+('The same, but with integers 4/3: ', 1)
+('Now, the same, but as floor division 4.0//3.0: ', 1.0)
+("Let's divide 23.45/5.6 and ensure it's a float result: ", 4.1875)
+("Let's round the result of 23.45/5.6: ", 4.0)
+
+("Let's divide 23.4532342/5.2983929: ", 4.426480754192465)
+('The same, using decimal lib, default decimal context: ', Decimal('4.426480754192465104807318957'))
+('The same, using decimal lib, 6 digits decimal context: ', Decimal('4.42648'))
+('Divide 74/5.2, decimal way, with 6 digits precision: ', Decimal('14.2308'))
+
+("Let's divide 23.4532342/5.2983929 using decimal lib, and format the print to 2 decimal digits: ", '4.43')
+

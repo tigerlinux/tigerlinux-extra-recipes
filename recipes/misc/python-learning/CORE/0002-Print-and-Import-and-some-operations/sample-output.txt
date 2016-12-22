@@ -1,0 +1,31 @@
+We are running in:
+linux
+
+This is a SUM: 5 + 200
+205
+
+This is a REST: 205 - 5
+200
+
+This is a multiplication: 34 x 6
+204
+
+This is a Division: 342 / 20
+17.1
+
+This is a MODULE from the last division: 342 Module 20
+2
+
+This is an exponential: 2 ^ 200
+1267650600228229401496703205376
+
+We define two strings, and concatenate them in a single print:
+The Life is Strange.....
+
+My 3 cats are named:
+Kiki Rayita Negrito
+
+Let's print a string 10 times... Just because we can...jejeje:
+ !String!  !String!  !String!  !String!  !String!  !String!  !String!  !String!  !String!  !String! 
+
+

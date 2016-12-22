@@ -1,0 +1,110 @@
+
+The actual value is: 1
+The actual value is: 2
+The actual value is: 3
+The actual value is: 4
+The actual value is: 5
+The actual value is: 6
+The actual value is: 7
+The actual value is: 8
+The actual value is: 9
+The actual value is: 10
+
+The actual value is: 10
+The actual value is: 9
+The actual value is: 8
+The actual value is: 7
+The actual value is: 6
+The actual value is: 5
+The actual value is: 4
+The actual value is: 3
+The actual value is: 2
+The actual value is: 1
+
+The actual even number is: 10
+The actual even number is: 8
+The actual even number is: 6
+The actual even number is: 4
+The actual even number is: 2
+
+The actual even number is: 10
+The actual even number is: 8
+The actual even number is: 6
+The actual even number is: 4
+The actual even number is: 2
+
+Comparing number 1
+Comparing number 2
+Comparing number 3
+Comparision number FOUND and it's 3
+
+Comparing number 1
+Comparing number 2
+Comparing number 3
+Comparing number 4
+Comparing number 5
+Comparing number 6
+Comparing number 7
+Loop finished, and the comparision number was not found
+
+Kiki is a CAT !!
+Rayita is a CAT !!
+Negrito is a CAT !!
+
+Kiki is a CAT !!
+Rayita is a CAT !!
+ALERT !!. Found a DOG in our CAT PACK and the name is Nash. Aborting the loop !
+
+Kiki is a CAT !!
+Rayita is a CAT !!
+Negrito is a CAT !!
+And also KISA is a CAT!!
+
+My number is :1
+My number is :2
+My number is :3
+My number is :4
+My number is :5
+
+G
+a
+t
+i
+b
+u
+r
+u
+
+Range number: 0
+Range number: 1
+Range number: 2
+Range number: 3
+Range number: 4
+Range number: 5
+Range number: 6
+Range number: 7
+Range number: 8
+Range number: 9
+
+Complete list of tuples: [(1, 3), (2, 4), (5, 7), (8, 10)]
+(1, 3)
+(2, 4)
+(5, 7)
+(8, 10)
+
+gato1 name is Kiki
+gato2 name is Rayita
+gato3 name is Negrito
+
+gato1 name is Kiki
+gato2 name is Rayita
+gato3 name is Negrito
+
+Found a DOG in the CAT PACK, and the culprit name is: "Nash"
+Found a DOG in the CAT PACK, and the culprit name is: "Toulousse"
+Number of DOGS found in the CAT pack: 2
+
+Found a DOG in the CAT PACK, and the culprit name is: "Nash"
+Found a DOG in the CAT PACK, and the culprit name is: "Toulousse"
+Number of DOGS found in the CAT pack: 2
+

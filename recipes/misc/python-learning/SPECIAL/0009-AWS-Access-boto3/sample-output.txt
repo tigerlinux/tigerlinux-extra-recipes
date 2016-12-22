@@ -1,0 +1,62 @@
+
+Response type is <type 'dict'>
+
+Key name is: ResponseMetadata, Containing:
+
+ResponseMetadata => {'RetryAttempts': 0, 'HTTPStatusCode': 200, 'RequestId': '2e05865b-619c-47ae-a6bc-2bdebe3fd442', 'HTTPHeaders': {'transfer-encoding': 'chunked', 'vary': 'Accept-Encoding', 'server': 'AmazonEC2', 'content-type': 'text/xml;charset=UTF-8', 'date': 'Tue, 18 Oct 2016 19:56:41 GMT'}}
+
+
+Key name is: Vpcs, Containing:
+
+Vpcs => [{u'VpcId': 'vpc-530de337', u'InstanceTenancy': 'default', u'State': 'available', u'DhcpOptionsId': 'dopt-3d33a358', u'CidrBlock': '172.31.0.0/16', u'IsDefault': True}, {u'VpcId': 'vpc-ea91728d', u'InstanceTenancy': 'default', u'Tags': [{u'Value': 'vpc-tiger-01', u'Key': 'Name'}], u'State': 'available', u'DhcpOptionsId': 'dopt-3d33a358', u'CidrBlock': '192.168.0.0/16', u'IsDefault': False}]
+
+
+********** VPC NUMBER 1 **********
+
++++ Basic VPC details follow: +++
+	VPC ID: vpc-530de337
+	VPC CIDR: 172.31.0.0/16
+	NOTE: "This is the DEFAULT VPC"
+
+Subnets in VPC "vpc-530de337"
+
+Subnet number 1
+	Subnet ID: subnet-34629250
+	Subnet CIDR: 172.31.16.0/20
+	Subnet AZ: us-west-2a
+
+Subnet number 2
+	Subnet ID: subnet-23647054
+	Subnet CIDR: 172.31.32.0/20
+	Subnet AZ: us-west-2b
+
+Subnet number 3
+	Subnet ID: subnet-23f8db7a
+	Subnet CIDR: 172.31.0.0/20
+	Subnet AZ: us-west-2c
+
+********** VPC NUMBER 2 **********
+
++++ Basic VPC details follow: +++
+	VPC ID: vpc-ea91728d
+	VPC CIDR: 192.168.0.0/16
+
+
+Subnets in VPC "vpc-ea91728d"
+
+Subnet number 1
+	Subnet ID: subnet-dd5f56b9
+	Subnet CIDR: 192.168.50.0/24
+	Subnet AZ: us-west-2a
+
+Subnet number 2
+	Subnet ID: subnet-e991b19f
+	Subnet CIDR: 192.168.60.0/24
+	Subnet AZ: us-west-2b
+
+Subnet number 3
+	Subnet ID: subnet-5246de0a
+	Subnet CIDR: 192.168.70.0/24
+	Subnet AZ: us-west-2c
+
+

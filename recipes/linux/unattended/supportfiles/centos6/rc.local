@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# This script will be executed *after* all the other init scripts.
+# You can put your own initialization stuff in here if you don't
+# want to do the full Sys V style init stuff.
+
+touch /var/lock/subsys/local
+
+if [ -f /usr/bin/linux_logo ]; then
+        echo "" > /etc/issue
+        /usr/bin/linux_logo -L redhat -t "$R" >> /etc/issue
+        /usr/bin/linux_logo -L redhat -a -t "$R" > /etc/issue.net
+        echo >> /etc/issue
+        cat /etc/issue > /etc/motd
+        echo "" >> /etc/motd
+        echo "Centos 6 Server TIGERLINUX Edition" >> /etc/motd
+        echo "" >> /etc/motd
+fi
+

@@ -1,0 +1,11 @@
+
+2
+['Kiki', 'Nash']
+{'Nash': "(i__main__\ndogpet\np1\n(dp2\nS'color'\np3\nS'Two Brown tones'\np4\nsS'dogspecialdata'\np5\nS'Very good manners !!'\np6\nsS'race'\np7\nS'Yorkshire'\np8\nsS'name'\np9\nS'Nash'\np10\nsS'catordog'\np11\nS'dog'\np12\nsb.", 'Kiki': "(i__main__\ncatpet\np1\n(dp2\nS'color'\np3\nS'White with black spots'\np4\nsS'race'\np5\nS'Cacri (callejero criollo)'\np6\nsS'name'\np7\nS'Kiki'\np8\nsS'catmouseface'\np9\nI01\nsS'catordog'\np10\nS'cat'\np11\nsb."}
+
+"Kiki" is a White with black spots, Cacri (callejero criollo) cat
+Also, the Cat "Kiki" has a mouse face !! :-)
+
+"Kiki Ratonila" is a White with black spots, Cacri (callejero criollo) cat
+Also, the Cat "Kiki Ratonila" has a mouse face !! :-)
+

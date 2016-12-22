@@ -1,0 +1,29 @@
+
+G
+A
+T
+I
+B
+U
+R
+U
+The sum of all items on list [1, 3, 20, 31] is: 55
+Variables: 22 and 23 and 777
+The squared of all items on list [1, 3, 20, 31] is: [1, 9, 400, 961]
+
+The documentation for mysquaredlist is: 
+
+    This function requires only one argument: A list of
+    numbers. The result will be another list with the
+    squares of every number in the input list
+    
+The documentation for the module is: 
+
+This module contain the function "mysquearedlist" which will
+get a list of numbers, and return another list with the square
+of every number in the original list.
+
+Also, the variable "variable3" with value 777 is included in
+the module
+
+

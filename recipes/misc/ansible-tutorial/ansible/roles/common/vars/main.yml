@@ -1,0 +1,4 @@
+---
+# Our variables
+layer_message: "Infrastucture Server\n"
+layer_filename: /etc/layer-infra-common

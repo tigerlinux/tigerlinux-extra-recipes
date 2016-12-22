@@ -1,0 +1,9 @@
+---
+- name: Our Site01
+  hosts: cloudgroup
+  user: ansible
+  become: yes
+  become_method: sudo
+  roles:
+    - common
+    - webserver

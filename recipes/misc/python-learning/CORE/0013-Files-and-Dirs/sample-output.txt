@@ -1,0 +1,34 @@
+
+Kiki
+Rayita
+Negrito
+
+
+Current directory contents: ['data.txt', 'sample-output.txt', 'files.py']
+
+Kiki
+Rayita
+Negrito
+Kiki Ratonila
+Rayoncita de Rayon
+Negrurismo de Renegro
+
+
+Current directory contents: ['sample-output.txt', 'files.py', 'data2.txt']
+
+Kiki
+Rayita
+Negrito
+Ratona
+Rayadura
+Negrurismo
+
+Line number "1", contents: "Kiki"
+Line number "2", contents: "Rayita"
+Line number "3", contents: "Negrito"
+Line number "4", contents: "Ratona"
+Line number "5", contents: "Rayadura"
+Line number "6", contents: "Negrurismo"
+
+Current directory contents: ['sample-output.txt', 'files.py']
+

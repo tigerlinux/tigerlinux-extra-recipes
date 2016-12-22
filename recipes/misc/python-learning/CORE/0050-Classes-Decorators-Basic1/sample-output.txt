@@ -1,0 +1,25 @@
+
+We are in total: 3 Instances !!
+We are in total: 3 Instances !!
+We are in total: 3 Instances !!
+We are in total: 2 Instances !!
+We are in total: 0 Instances !!
+We are in total: 20 Instances !!
+We are in total: 20 Instances !!
+We are in total: 20 Instances !!
+We are in total: 20 Instances !!
+We are in total: 0 Instances !!
+
+Call 1 to myfunctionfromaclass
+('My values are: ', 1, 5, 6, 30.2)
+
+Call 2 to myfunctionfromaclass
+('My values are: ', 'Kiki', 'Rayita', 'Negrito', 'Kisa')
+
+Call 1 to myotherfunctionfromclass
+('Here again: My values are: ', [2, 4, 6, 8, 10], 'Hello Guys and Gals')
+
+Call 2 to myotherfunctionfromclass
+('Here again: My values are: ', 'The World is Twisted', 'But everything is O.K.')
+
+

@@ -1,0 +1,21 @@
+#
+# AutoScaling Template with LBaaS V2
+# By: Reinaldo R. Martinez P.
+# TigerLinux AT Gmail DOT Com
+#
+# For use with HEAT in OpenStack Mitaka with LBaaS V2.
+#
+# ** ENVIRONMENT FILE - LOCAL VERSION **
+#
+# Before you use this template, ensure your cloud comply with
+# the following points:
+# - OpenStack Mitaka Or Newer with LBaaS V2 Installed.
+# - AWS-EC2 credentials priviouslly created with: 
+#   openstack ec2 credentials create.
+# - Ceilometer with aodh installed.
+# - Heat installed.
+# - Common OpenStack items (flavor, keys, images, etc.)
+#
+
+resource_registry:  
+    "OS::Nova::Server::Webserver": webserver_lb.yaml

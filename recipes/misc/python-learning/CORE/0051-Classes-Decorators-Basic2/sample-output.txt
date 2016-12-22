@@ -1,0 +1,17 @@
+
+('Called here myclasscounter with classname: ', <class '__main__.myclass'>)
+We have 1 calls to this function !
+('Called here myclasscounter with classname: ', <class '__main__.myclass2'>)
+We have 2 calls to this function !
+Constructed the instance number 1 for myclass
+Constructed the instance number 2 for myclass
+Constructed the instance number 1 for myclass2
+Constructed the instance number 2 for myclass2
+Constructed the instance number 3 for myclass
+Constructed the instance number 4 for myclass
+
+We are in total: 4 Instances of myclass !!
+We are in total: 2 Instances of myclass2 !!
+
+('How many times the function was called: ', 2)
+

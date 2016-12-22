@@ -1,0 +1,255 @@
+#
+# AutoScaling Template with LBaaS V2
+# By: Reinaldo R. Martinez P.
+# TigerLinux AT Gmail DOT Com
+#
+# For use with HEAT in OpenStack Mitaka with LBaaS V2.
+#
+# ** MAIN TEMPLATE FILE **
+#
+# Before you use this template, ensure your cloud comply with
+# the following points:
+# - OpenStack Mitaka Or Newer with LBaaS V2 Installed.
+# - AWS-EC2 credentials priviouslly created with: 
+#   openstack ec2 credentials create.
+# - Ceilometer with aodh installed.
+# - Heat installed.
+# - Common OpenStack items (flavor, keys, images, etc.)
+#
+# NOTE: Try to set your samples in ceilometer pipeline file
+#       /etc/ceilometer/pipeline.yaml to 60 instead of 600, but
+#       only if you are doing testing of if you have a very fast
+#       MongoDB setup. The lower the time, the faster the
+#       AutoScaling will react to cpu changes, but, you'll increase
+#       the space and i/o usage in your MongoDB Database. This can
+#       impact negativelly your whole ceilometer installation.
+#
+
+#
+# Our Template Header:
+#
+heat_template_version: 2014-10-16  
+description: A simple auto scaling group with LBaaS V2 Service.
+
+
+#
+# Common parameter definitions:
+#
+parameters:
+
+  my_flavor:
+    type: string
+    description: Flavor for the server to be created
+    default: "m1.normal"
+    constraints:
+      - custom_constraint: nova.flavor
+
+  my_accesskey:
+    type: string
+    description: Name of an existing key-pair
+    default: "openstack-server-01"
+    constraints:
+      - custom_constraint: nova.keypair
+
+  my_image:
+    type: string
+    description: Image ID or image name to use for the server
+    default: "Ubuntu-1404lts-32-Cloud"
+    constraints:
+      - custom_constraint: glance.image
+
+  my_network:
+    type: string
+    description: Neutron Network
+    default: "internal"
+    constraints:
+      - custom_constraint: neutron.network
+
+  my_subnet:
+    type: string
+    description: Neutron SUB-Network
+    default: "internal-pool"
+
+  my_zone:
+    type: string
+    description: Availability Zone
+    default: "nova"
+
+  app_port:
+    type: string
+    description: Aplication TCP Port
+    default: "80"
+
+  application_install:
+    type: string
+    description: HTTP Application to install
+    default: "apache"
+    constraints: 
+      - allowed_values: [apache, nginx]
+        description: Value must be one of 'apache', or 'nginx'
+
+#
+# Resource Definitions
+#
+# Please note: The AutoScaing group resource "OS::Nova::Server::Webserver
+# is defined in the environment file. You'll find with this template 3 more
+# support files:
+# - Template-AutoScaling-LBaaSV2-ENV-LocalCLI.yaml: Environment version to
+#   be used with openstack or heat "cli". It assumes your server file is
+#   located in the same directory as the template
+# - Template-AutoScaling-LBaaSV2-ENV-HTTP-Server.yaml: Environment version
+#   wich assumes your server file is located in a URL (a web server).
+# - webserver_lb.yaml: Your server file. Depending of your environment file,
+#   you should have this file locally or in a web server.
+#
+#
+resources:
+
+#
+# Security Group with access to icmp, tcp port 22 (ssh) and the web application
+# port
+#
+  sec_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+      - remote_ip_prefix: 0.0.0.0/0
+        protocol: tcp
+        port_range_min: { get_param: app_port }
+        port_range_max: { get_param: app_port }
+      - remote_ip_prefix: 0.0.0.0/0
+        protocol: tcp
+        port_range_min: 22
+        port_range_max: 22
+      - remote_ip_prefix: 0.0.0.0/0
+        protocol: icmp
+
+#
+# Our main autoscaling group
+#
+  group:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      cooldown: 60
+      desired_capacity: 1
+      max_size: 5
+      min_size: 1
+      resource:
+        type: OS::Nova::Server::Webserver
+        properties:
+          metadata: {"metering.stack": {get_param: "OS::stack_id"}}
+          pool_id: { get_resource: pool }
+          instance_flavor: { get_param: my_flavor }
+          server_network: { get_param: my_network }
+          server_subnet: { get_param: my_subnet }
+          server_image: { get_param: my_image }
+          server_zone: { get_param: my_zone }
+          server_secgroup: { get_resource: sec_group }
+          server_port: { get_param: app_port }
+          server_key: { get_param: my_accesskey }
+          http_app: { get_param: application_install }
+
+#
+# Our LBaaS V2 Health Monitor.
+#
+  monitor:
+    type: OS::Neutron::LBaaS::HealthMonitor
+    properties:
+      delay: 5
+      type: HTTP
+      timeout: 5
+      max_retries: 3
+      pool: { get_resource: pool }
+
+#
+# Our LBaaS V2 Pool
+#
+  pool:
+    type: OS::Neutron::LBaaS::Pool
+    properties:
+      lb_algorithm: ROUND_ROBIN
+      protocol: HTTP
+      listener: { get_resource: listener }
+
+#
+# Our LBaaS V2 Listener
+#
+  listener:
+    type: OS::Neutron::LBaaS::Listener
+    properties:
+      loadbalancer: { get_resource: lb }
+      protocol: HTTP
+      protocol_port: { get_param: app_port }
+
+#
+# Our LBaaS V2 "Load Balancer"
+#
+  lb:
+    type: OS::Neutron::LBaaS::LoadBalancer
+    properties:
+      vip_subnet: { get_param: my_subnet }
+
+#
+# Scale-up-and-down policies:
+#
+  scaleup_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: group }
+      cooldown: 60
+      scaling_adjustment: 1
+
+  scaledown_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: group }
+      cooldown: 60
+      scaling_adjustment: -1
+
+#
+# Our alarms:
+#
+  cpu_alarm_high:
+    type: OS::Ceilometer::Alarm
+    properties:
+      meter_name: cpu_util
+      description: Scale-up if the average CPU > 50% for 1 minute
+      statistic: avg
+      period: 60
+      evaluation_periods: 1
+      threshold: 50
+      alarm_actions:
+        - {get_attr: [scaleup_policy, alarm_url]}
+      comparison_operator: gt
+      matching_metadata: {'metadata.user_metadata.stack': {get_param: "OS::stack_id"}}
+
+  cpu_alarm_low:
+    type: OS::Ceilometer::Alarm
+    properties:
+      meter_name: cpu_util
+      description: Scale-down if the average CPU < 15% for 10 minutes
+      statistic: avg
+      period: 600
+      evaluation_periods: 1
+      threshold: 15
+      alarm_actions:
+        - {get_attr: [scaledown_policy, alarm_url]}
+      comparison_operator: lt
+      matching_metadata: {'metadata.user_metadata.stack': {get_param: "OS::stack_id"}}
+
+#
+# And, our output:
+#
+outputs:
+  Scale-UP-URL:
+    value: {get_attr: [scaleup_policy, alarm_url]}
+  Scale-DOWN-URL:
+    value: {get_attr: [scaledown_policy, alarm_url]}
+  Scale-UP-SIGNAL-URL:
+    value: {get_attr: [scaleup_policy, signal_url]}
+  Scale-DOWN-SIGNAL-URL:
+    value: {get_attr: [scaledown_policy, signal_url]}
+
+

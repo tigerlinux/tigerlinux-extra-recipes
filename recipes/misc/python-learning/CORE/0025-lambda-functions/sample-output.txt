@@ -1,0 +1,16 @@
+
+8
+
+LOS GATOS is a string
+LOS PERROS is a string
+
+Who is bigger ?... 20 or 10: 20
+Who is bigger ?... 1 or 30: 30
+Who is bigger ?... -1 or -20: -1
+
+Original list: [1, 2, 3, 4]
+New list: [101, 102, 103, 104]
+
+Original list: [1, 2, 3, 4]
+New list: [101, 102, 103, 104]
+

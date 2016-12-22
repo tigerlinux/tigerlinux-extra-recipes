@@ -1,0 +1,10 @@
+The offset of substring "ik" from string "Kiki" is: 1
+The alternate name of "Rayita" is: "Rayoncita"
+The black and beautifull cat name is "NEGRITO"
+The variable string 1 is alpha ?: True
+The variable string 2 is digit ?: False
+The cat's names with a new line at the end: Kiki,Rayita,Negrito
+ and without new line...: Kiki,Rayita,Negrito
+The cat's name's, converted into a list: ['Kiki', 'Rayita', 'Negrito']
+I have 3 cats and their names are Kiki, Rayita and Negrito
+Our cats are Kiki, Rayita, and Negrito

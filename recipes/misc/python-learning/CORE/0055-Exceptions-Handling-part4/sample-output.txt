@@ -1,0 +1,39 @@
+
+
+Kiki
+Rayita
+Negrito
+
+('My result with precision = 4 is ', Decimal('9.160'))
+
+STARTING A WITH/AS BLOCK:
+
+The "with/as" block has started !!
+
+This is a generic message: The world is twisted but KIKI will save it !!
+
+Normal "with/as" code block termination
+
+STARTING A WITH/AS BLOCK:
+
+The "with/as" block has started !!
+
+This is a generic message: You don't really get it do you ??. KIKI is the only thing (cat) what can save the world :-) !!
+
+Whoaaaa... a TypeError happened here
+
+We are done here !
+
+Normal "with/as" code block termination
+
+STARTING A WITH/AS BLOCK:
+
+The "with/as" block has started !!
+
+This is a generic message: I insist !!. KIKI will save the world !!
+
+('Ooopssss happened: ', <type 'exceptions.TypeError'>, TypeError('Ohh myyy... another programmer breaking python on purpose ??.. please get a life !!',), <traceback object at 0x7f555c6ac830>)
+Traceback (most recent call last):
+  File "./exceptions-handling4.py", line 150, in <module>
+    raise TypeError("Ohh myyy... another programmer breaking python on purpose ??.. please get a life !!")
+TypeError: Ohh myyy... another programmer breaking python on purpose ??.. please get a life !!

@@ -1,0 +1,21 @@
+---
+# Task called by include - add users from the list
+- include: useradd.yml user={{ item }}
+  with_items:
+    - kiki
+    - rayita
+    - negrito
+# Task for the file copy - use variables defined
+# in ./vars/main.yml
+- name: copy a file and set its contents
+  copy:
+    dest: "{{ layer_filename }}"
+    content: "{{ layer_message }}"
+# LSB package install:
+- include: lsbinstall.yml
+# Set the server information in a file from a jinja2 template
+# using template module
+- name: set the server info template
+  template:
+    src: layer-infra-server-spec.j2
+    dest: /etc/layer-infra-server-spec

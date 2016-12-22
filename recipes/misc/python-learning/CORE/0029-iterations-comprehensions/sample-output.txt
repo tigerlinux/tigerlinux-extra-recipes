@@ -1,0 +1,9 @@
+
+{1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36}
+{1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36}
+{2: 8, 4: 64, 6: 216}
+
+['red-one', 'red-two', 'red-three', 'blue-one', 'blue-two', 'blue-three', 'black-one', 'black-two', 'black-three']
+set(['blue-three', 'red-two', 'red-one', 'black-two', 'black-three', 'red-three', 'blue-two', 'blue-one', 'black-one'])
+{'blue-three': 'blue', 'red-two': 'red', 'red-one': 'red', 'black-two': 'black', 'black-three': 'black', 'red-three': 'red', 'blue-two': 'blue', 'blue-one': 'blue', 'black-one': 'black'}
+

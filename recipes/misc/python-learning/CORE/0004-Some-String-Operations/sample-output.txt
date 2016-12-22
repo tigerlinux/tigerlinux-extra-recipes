@@ -1,0 +1,12 @@
+
+My String is Rayita
+My string size is 6 bytes long
+The first letter of my string is "R" and the third is "y"
+The last letter of my string is "a"
+The second, third and fourth letters of my string are "ayi"
+The letters, from the third to the penultimate one are: "yit"
+The letters, from the second letter to the last one are: "ayita"
+Now, backward. The penultimate letter is: "t"
+The last letter is: "a"
+My string last two letters are: "ta"
+

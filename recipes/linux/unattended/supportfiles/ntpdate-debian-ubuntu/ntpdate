@@ -1,0 +1,45 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          ntpdate
+# Required-Start:  $network $remote_fs $syslog
+# Required-Stop:   $network $remote_fs $syslog
+# X-Start-Before:    ntp
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: ntpdate time sync service
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+if [ -f /lib/lsb/init-functions ]
+then
+	. /lib/lsb/init-functions
+fi
+
+case $1 in
+start)
+	if [ -f /usr/sbin/ntpdate-debian ]
+	then
+		log_daemon_msg "Starting NTPDATE Time Syncronization" "ntpdate"
+		start-stop-daemon --quiet --start --oknodo --exec /usr/sbin/ntpdate-debian
+		status=$?
+		log_end_msg $status
+	else
+		exit 0
+	fi
+	;;
+stop)
+	exit 0
+	;;
+status)
+	if [ -f /usr/bin/ntpq ]
+	then
+		ntpq -np
+	fi
+	exit 0
+	;;
+*)
+	echo "Usage: $0 {start|stop|status}"
+	exit 2
+	;;
+esac

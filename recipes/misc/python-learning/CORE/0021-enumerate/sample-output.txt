@@ -1,0 +1,13 @@
+
+"Kiki" is the cat number: 1
+"Rayita" is the cat number: 2
+"Negrito" is the cat number: 3
+"Kisa" is the cat number: 4
+"Gatiburu" is the cat number: 5
+
+"Kiki" is the cat number: 1
+"Rayita" is the cat number: 2
+"Negrito" is the cat number: 3
+"Kisa" is the cat number: 4
+"Gatiburu" is the cat number: 5
+

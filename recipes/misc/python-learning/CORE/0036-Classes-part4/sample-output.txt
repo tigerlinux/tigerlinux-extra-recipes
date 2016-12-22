@@ -1,0 +1,18 @@
+
+23
+[1, 2, 3, 4]
+{'a': 1, 'c': 3, 'b': 2}
+
+['Kiki', 'Rayita', 'Negrito']
+['Kiki', 'Rayita', 'Negrito', 'Kisa']
+
+['Kiki', 'Rayita', 'Negrito', 'Kisa']
+['Kiki', 'Rayita', 'Negrito']
+
+Kiki
+Rayita
+Negrito
+
+{'color': 'Base white with black patches', 'name': 'Kiki', 'mousefase': True}
+('Name:', 'Kiki', ', Mouse face:', True, ', Color:', 'Base white with black patches')
+

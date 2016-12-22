@@ -1,0 +1,21 @@
+K
+I
+K
+I
+!
+rayita!rayita!rayita!rayita!rayita!rayita!rayita!rayita!rayita!rayita!
+rayita!rayita!rayita!rayita!rayita!rayita!rayita!rayita!rayita!
+rayita!rayita!rayita!rayita!rayita!rayita!rayita!rayita!
+rayita!rayita!rayita!rayita!rayita!rayita!rayita!
+rayita!rayita!rayita!rayita!rayita!rayita!
+rayita!rayita!rayita!rayita!rayita!
+rayita!rayita!rayita!rayita!
+rayita!rayita!rayita!
+rayita!rayita!
+rayita!
+My squared list is: [1, 4, 9, 16, 25, 36, 49]
+My dict is: {'a': 1, 'c': 3, 'b': 2}
+Key "j" is missing
+('a', '=>', 1)
+('c', '=>', 3)
+Key "f" is missing

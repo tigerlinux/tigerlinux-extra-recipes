@@ -1,0 +1,10 @@
+
+G
+A
+T
+I
+B
+U
+R
+U
+The sum of all items on list [1, 3, 20, 31] is: 55

@@ -1,0 +1,45 @@
+
+200
+30
+KKKK
+
+['kiki', 'rayita', 'negrito']
+['nash', 'tolousse', 'kiki', 'negrito']
+['kiki', 'negrito']
+[1, 3]
+
+The variable is: Kiki
+The variable now is: Rayita
+
+Kiki, Rayita y Negrito son Gatos !!
+Kiki, Rayita y Negrito son Gatos !!
+Kiki, Rayita y Negrito son Gatos !!
+
+Kiki
+Kiki
+Kiki
+Rayita
+Rayita
+Rayita
+Negrito
+Negrito
+Kiki
+Kiki
+Kiki
+Kiki
+Kiki
+Kiki
+Kiki
+Kiki
+Gatiburu
+Gatiburu
+
+Values: 5 and 2
+(2, 10, 7, 25)
+
+Values: 23.4 and 12.5
+(1.8719999999999999, 292.5, 35.9, 1.3037616964031902e+17)
+
+Values: 5 and 6
+(0, 30, 11, 15625)
+

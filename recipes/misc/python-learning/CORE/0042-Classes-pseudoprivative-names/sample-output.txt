@@ -1,0 +1,4 @@
+
+('Value: 23, Dictionary: ', <__main__.myclass instance at 0x7f2b8e9617e8>)
+The value of 56^3 is: 175616
+

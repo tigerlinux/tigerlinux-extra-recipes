@@ -1,0 +1,10 @@
+
+Wooaaa... I broke something here
+
+The world is terrible wrong, specially when programmers do bad things !!
+
+('Error CODE: ', -44)
+('Error TEXT: ', "KIKI going crazy error.. jail KIKI inside a cage and wait 'till she's normal")
+
+Error logged to file !!
+

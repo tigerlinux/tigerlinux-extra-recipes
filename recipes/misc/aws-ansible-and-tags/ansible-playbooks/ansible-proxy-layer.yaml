@@ -1,0 +1,157 @@
+#
+# Ansible playbook definition for proxy layer deployment.
+# It deploys two proxy servers, in different AZ
+# All needed variables in "vars" section
+# Reynaldo R. Martinez P.
+# E-Mail tigerlinux at gmail dot com
+#
+#
+---
+- name: Create proxy layer
+  hosts: localhost
+  gather_facts: False
+  vars:
+    vpc_region: us-west-2
+    sec_group: sg-ea0d3993
+    key_name: tigerlinux-01
+    amazon_image: ami-a9d276c9
+    subnet_p1: subnet-f1b12294
+    subnet_p2: subnet-b34591ea
+    machine_type: t2.micro
+    az_p1: us-west-2a
+    az_p2: us-west-2c
+    profile_name: tigerlinux-01-s3-ro-ec2-ro-profile
+  tasks:
+  - name: Proxy-server-01
+    ec2:
+       region: "{{ vpc_region }}"
+       group_id: "{{ sec_group }}"
+       keypair: "{{ key_name }}"
+       instance_type: "{{ machine_type }}"
+       image: "{{ amazon_image }}"
+       vpc_subnet_id: "{{ subnet_p1 }}"
+       assign_public_ip: True
+       instance_tags:
+          name: proxy-server-01
+          proxylayer: proxy
+          environment: devel
+       wait: True
+       wait_timeout: 600
+       count: 1
+       zone: "{{ az_p1 }}"
+       instance_profile_name: "{{ profile_name }}"
+       user_data: |
+                  #!/bin/bash
+                  echo "applayer" > /etc/aws-discovery-layer.txt
+                  DEBIAN_FRONTEND=noninteractive apt-get update
+                  DEBIAN_FRONTEND=noninteractive apt-get -y install awscli
+                  DEBIAN_FRONTEND=noninteractive apt-get -y install haproxy haproxyctl
+                  mkdir -p /root/.aws
+                  echo "[default]" > /root/.aws/config
+                  echo "output = text" >> /root/.aws/config
+                  echo "region = us-west-2" >> /root/.aws/config
+                  aws s3 cp s3://aws-tigerlinux-01-lab/haproxy.cfg.HEADER /etc/haproxy/haproxy.cfg.HEADER
+                  aws s3 cp s3://aws-tigerlinux-01-lab/haproxy-provisioning-script.sh /usr/local/bin/
+                  chmod 755 /usr/local/bin/haproxy-provisioning-script.sh
+                  systemctl start haproxy
+                  systemctl enable haproxy
+                  /usr/local/bin/haproxy-provisioning-script.sh
+                  aws s3 cp s3://aws-tigerlinux-01-lab/haproxy-control-crontab /etc/cron.d/
+                  chmod 644 /etc/cron.d/haproxy-control-crontab
+                  systemctl restart cron
+    register: proxy01
+
+  - name: Proxy-server-02
+    ec2:
+       region: "{{ vpc_region }}"
+       group_id: "{{ sec_group }}"
+       keypair: "{{ key_name }}"
+       instance_type: "{{ machine_type }}"
+       image: "{{ amazon_image }}"
+       vpc_subnet_id: "{{ subnet_p2 }}"
+       assign_public_ip: True
+       instance_tags:
+          name: proxy-server-02
+          proxylayer: proxy
+          environment: devel
+       wait: True
+       wait_timeout: 600
+       count: 1
+       zone: "{{ az_p2 }}"
+       instance_profile_name: "{{ profile_name }}"
+       user_data: |
+                  #!/bin/bash
+                  echo "applayer" > /etc/aws-discovery-layer.txt
+                  DEBIAN_FRONTEND=noninteractive apt-get update
+                  DEBIAN_FRONTEND=noninteractive apt-get -y install awscli
+                  DEBIAN_FRONTEND=noninteractive apt-get -y install haproxy haproxyctl
+                  mkdir -p /root/.aws
+                  echo "[default]" > /root/.aws/config
+                  echo "output = text" >> /root/.aws/config
+                  echo "region = us-west-2" >> /root/.aws/config
+                  aws s3 cp s3://aws-tigerlinux-01-lab/haproxy.cfg.HEADER /etc/haproxy/haproxy.cfg.HEADER
+                  aws s3 cp s3://aws-tigerlinux-01-lab/haproxy-provisioning-script.sh /usr/local/bin/
+                  chmod 755 /usr/local/bin/haproxy-provisioning-script.sh
+                  systemctl start haproxy
+                  systemctl enable haproxy
+                  /usr/local/bin/haproxy-provisioning-script.sh
+                  aws s3 cp s3://aws-tigerlinux-01-lab/haproxy-control-crontab /etc/cron.d/
+                  chmod 644 /etc/cron.d/haproxy-control-crontab
+                  systemctl restart cron
+    register: proxy02
+
+  - name: Add new instance to host group
+    add_host:
+       hostname: "{{ item.public_ip }}"
+       groupname: launched
+    with_items: 
+       - "{{ proxy01.instances }}"
+       - "{{ proxy02.instances }}"
+
+  - name: Wait for SSH to come up
+    wait_for:
+        host: "{{ item.public_dns_name }}"
+        port: 22
+        delay: 60
+        timeout: 320
+        state: started
+    with_items:
+       - "{{ proxy01.instances }}"
+       - "{{ proxy02.instances }}"
+
+
+- name: Creates the ELB and add both haproxy servers to it
+  hosts: localhost
+  gather_facts: False
+  vars:
+    vpc_region: us-west-2
+    az_p1: us-west-2a
+    az_p2: us-west-2c
+  tasks:
+  - name: setup a simple load balancer
+    ec2_elb_lb:
+      name: proxy-layer-elb
+      state: present
+      region: "{{ vpc_region }}"
+      zones:
+        - "{{ az_p1 }}"
+        - "{{ az_p2 }}"
+      listeners:
+        - protocol: http
+          load_balancer_port: 80
+          instance_port: 80
+    register: proxylayer-elb
+
+  - name: Add the proxy instances to the ELB
+    local_action: ec2_elb
+    args:
+       instance_id: "{{ item.id }}"
+       ec2_elbs: proxy-layer-elb
+       state: present
+       region: "{{ vpc_region }}"
+    with_items:
+       - "{{ proxy01.instances }}"
+       - "{{ proxy02.instances }}"
+#
+# End
+#

@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# Zabbix LSB Cluster Control Service Script
+#
+# By Reinaldo Martinez P.
+# Caracas, Venezuela.
+# TigerLinux AT Gmail DOT Com
+#
+
+mystatus=`/usr/local/bin/zabbix-ha-control.sh status 2>/dev/null|grep -ci "server is running"`
+
+case $1 in
+start)
+        echo "Starting Zabbix HA Services"
+        echo "0" > /var/log/zabbix-ha-started.log
+        rm -f /var/log/zabbix-ha-stopped.log
+        /usr/local/bin/zabbix-ha-control.sh start > /dev/null 2>&1
+        exit 0
+        ;;
+stop)
+        echo "Stopping Zabbix HA Services"
+        rm -f /var/log/zabbix-ha-started.log
+        echo "0" > /var/log/zabbix-ha-stopped.log
+        /usr/local/bin/zabbix-ha-control.sh stop > /dev/null 2>&1
+        exit 0
+        ;;
+status)
+        echo "Zabbix HA Services Status"
+        if [ $mystatus == "0" ]
+        then
+                rm -f /var/log/zabbix-ha-started.log
+                echo "0" > /var/log/zabbix-ha-stopped.log
+                exit 3
+        else
+                echo "0" > /var/log/zabbix-ha-started.log
+                rm -f /var/log/zabbix-ha-stopped.log
+                exit 0
+        fi
+        ;;
+restart)
+        echo "Zabbix HA Services Restart"
+        /usr/local/bin/zabbix-ha-control.sh stop > /dev/null 2>&1
+        /usr/local/bin/zabbix-ha-control.sh start > /dev/null 2>&1
+        rm -f /var/log/zabbix-ha-started.log
+        echo "0" > /var/log/zabbix-ha-stopped.log
+        exit 0
+        ;;
+esac

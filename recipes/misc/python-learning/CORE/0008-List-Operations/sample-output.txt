@@ -1,0 +1,9 @@
+My favourite fruits are: ['Oranges', 'Pineapples', 'Bananas']
+My list has "3" items
+This is another list: ['Oranges', 'Pineapples', 'Bananas', 'Gourds', 'Blueberries']
+I added a new fruit and my new list is: ['Oranges', 'Pineapples', 'Bananas', 'Gourds', 'Blueberries', 'Strawberries']
+My fruit list sorted: ['Bananas', 'Blueberries', 'Gourds', 'Oranges', 'Pineapples', 'Strawberries']
+My fruit list reverse-sorted: ['Strawberries', 'Pineapples', 'Oranges', 'Gourds', 'Blueberries', 'Bananas']
+My fruit list without a fruit at index 3 is: ['Strawberries', 'Pineapples', 'Oranges', 'Blueberries', 'Bananas']
+('My original string is ', 'RAYITA', ' and my new list is ', ['R', 'A', 'Y', 'I', 'T', 'A'])
+('My new string2 is ', 'StrawberriesPineapplesOrangesBlueberriesBananas', " and it's derived from the list: ", ['Strawberries', 'Pineapples', 'Oranges', 'Blueberries', 'Bananas'])

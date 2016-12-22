@@ -1,0 +1,12 @@
+---
+- name: Install lsb support, in a yum-based machine
+  yum:
+    name: redhat-lsb-core
+    state: installed
+  when: ansible_os_family == "RedHat"
+
+- name: Install lsb support, in a apt-based machine
+  apt:
+    name: lsb-release
+    state: installed
+  when: ansible_os_family == "Debian"

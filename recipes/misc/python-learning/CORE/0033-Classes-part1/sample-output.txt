@@ -1,0 +1,11 @@
+
+The cat name is: Kiki Ratonilla
+The cat name is: Rayita de Rayon
+The cat name is: Negrito de Electron
+
+The Cat Name is: "Kikita Ratonilla" and the Cat Color is: Base White with Black Spots
+
+The Cat with name "Negrito" is "Black with white spots" and does not has a mouse face!!
+
+The Cat with name "Kiki" is "Base White with Black Spots" and has a mouse face!!
+

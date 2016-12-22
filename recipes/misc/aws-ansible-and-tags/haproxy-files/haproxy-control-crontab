@@ -1,0 +1,12 @@
+####################################
+#
+SHELL=/bin/bash
+PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+#
+# Control Crontab for self-service proxy autoconfigurator
+# Reynaldo R. Martinez P.
+# E-Mail: TigerLinux@Gmail.com
+#
+#
+
+*/1 * * * * root /usr/local/bin/haproxy-provisioning-script.sh > /var/log/last-haproxy-provisioning-run.log 2>&1

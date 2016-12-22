@@ -1,0 +1,20 @@
+
+('My original list: ', [1, 2, 3, 4])
+
+3
+
+Heyy yooooo... are you nuts ???
+
+2
+-1
+
+1
+Jejej... yo insist on being nuts are you not ??
+-9999
+
+1
+Index out of range or negative value obtained
+-77
+Index out of range or negative value obtained
+-99
+

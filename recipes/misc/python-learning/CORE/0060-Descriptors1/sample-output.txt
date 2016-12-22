@@ -1,0 +1,17 @@
+
+*** Obtaining starship name ***
+X-Wing
+
+** Setting starship name ***
+
+*** Obtaining starship name ***
+Y-Wing Heavy Bomber
+
+*** Clearing starship name ***
+
+** Setting starship name ***
+
+*** Obtaining starship name ***
+B-Wing Space Superiority Fighter
+
+

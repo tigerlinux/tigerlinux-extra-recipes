@@ -1,0 +1,23 @@
+
+('My item is: ', 75)
+('My item is: ', 105)
+('My item is: ', 107)
+('My item is: ', 105)
+('My "item" is: ', 75)
+('My "item" is: ', 105)
+('My "item" is: ', 107)
+('My "item" is: ', 105)
+('The char is: ', 'K')
+('The char is: ', 'i')
+('The char is: ', 'k')
+('The char is: ', 'i')
+('The byte is: ', 75)
+('The byte is: ', 105)
+('The byte is: ', 107)
+('The byte is: ', 105)
+('My list is: ', [75, 105, 107, 105])
+The byte is 75 and the char is K
+The byte is 105 and the char is i
+The byte is 107 and the char is k
+The byte is 105 and the char is i
+

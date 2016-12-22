@@ -1,0 +1,32 @@
+
+Arguments received:('Exploration Ship', 300, 'Enterprise')
+Returning Attribute planet
+We have used get 1 times in the class instance
+Earth
+Returning Attribute shipclass
+We have used get 2 times in the class instance
+Exploration Ship
+Returning Attribute shipcrew
+We have used get 3 times in the class instance
+300
+Returning Attribute shipname
+We have used get 4 times in the class instance
+Enterprise
+['Enterprise']
+Arguments received:('Juggernaut Class', 20, 'Vengance')
+Arguments received:('Surook Class Science and Combat Vessel', 120, "Ti'Mur")
+['Enterprise', 'Vengance', "Ti'Mur"]
+['Enterprise', 'Vengance', "Ti'Mur"]
+Vulcan
+Returning Attribute shipname
+We have used get 1 times in the class instance
+Ti'Mur
+Returning Attribute shipcrew
+We have used get 1 times in the class instance
+20
+
+4
+1
+1
+Get's used by the system for all our class objects:6
+

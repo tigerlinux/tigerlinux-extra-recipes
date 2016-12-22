@@ -1,0 +1,25 @@
+
+('Our lists are:', [1, 2, 3, 4, 5, 6], [1, 2, 3, 7, 8, 9, 10, 11, 12], [1, 3, 5, 9, 11])
+My list contents: [1, 2, 3, 4, 5, 6]
+
+('The "and" (intersection, no duplicates) operation between objects:', <__main__.listmanipulation instance at 0x7f0e2f661950>, <__main__.listmanipulation instance at 0x7f0e2f661998>, ' is: ')
+My list contents: [1, 2, 3]
+
+('The "or" (union) operation between objects:', <__main__.listmanipulation instance at 0x7f0e2f661950>, <__main__.listmanipulation instance at 0x7f0e2f661998>, 'is: ')
+My list contents: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+My list contents: [1, 3, 5, 9, 11]
+('Original Value: ', 1)
+('New value is: ', 1)
+('Original Value: ', 3)
+('New value is: ', 9)
+('Original Value: ', 5)
+('New value is: ', 25)
+('Original Value: ', 9)
+('New value is: ', 81)
+('Original Value: ', 11)
+('New value is: ', 121)
+Now my list object is: 
+My list contents: [1, 9, 25, 81, 121]
+('My object lenght is: ', 5)
+

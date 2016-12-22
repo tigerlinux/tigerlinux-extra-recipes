@@ -1,0 +1,154 @@
+#
+# AutoScaling Template with LBaaS V2
+# By: Reinaldo R. Martinez P.
+# TigerLinux AT Gmail DOT Com
+#
+# For use with HEAT in OpenStack Mitaka with LBaaS V2.
+#
+# ** SERVER/POOL-MEMBER DEFINITION FILE **
+#
+# Depending of your environment file, this file must be located
+# in the same directory of your other template files, or, in a 
+# web server.
+#
+# Before you use this template, ensure your cloud comply with
+# the following points:
+# - OpenStack Mitaka Or Newer with LBaaS V2 Installed.
+# - AWS-EC2 credentials priviouslly created with: 
+#   openstack ec2 credentials create.
+# - Ceilometer with aodh installed.
+# - Heat installed.
+# - Common OpenStack items (flavor, keys, images, etc.)
+#
+
+#
+# Our Template Header:
+#
+heat_template_version: 2014-10-16  
+description: Simple Ubuntu BASED Server with Apache and included in a pool.  
+
+#
+# Common parameter definitions:
+# Thos parameters are passed by the main HEAT template
+#
+parameters:
+
+  metadata:
+    type: json
+
+  pool_id:
+    type: string
+    description: LB Service Pool
+
+  instance_flavor:
+    type: string
+    description: Instance Flavor
+
+  server_network:
+    type: string
+    description: Instance Network
+
+  server_subnet:
+    type: string
+    description: Instance Subnet (as a "member")
+
+  server_image:
+    type: string
+    description: Instance Base Image
+
+  server_zone:
+    type: string
+    description: Instance Availability Zone
+
+  server_secgroup:
+    type: string
+    description: Instance Security Group
+
+  server_port:
+    type: string
+    description: Instance Application Group
+
+  server_key:
+    type: string
+    description: Instance SSH Access Key
+
+  http_app:
+    type: string
+    description: Instance HTTP Application
+
+#
+# Our resources:
+#
+resources:
+
+#
+# Our NOVA Instance definition:
+#
+  server:
+    type: OS::Nova::Server
+    properties:
+      key_name: {get_param: server_key}
+      security_groups: [{get_param: server_secgroup}]
+      image: {get_param: server_image}
+      availability_zone: {get_param: server_zone}
+      flavor: {get_param: instance_flavor}
+      networks:
+        - network: {get_param: server_network}
+      user_data_format: RAW
+      metadata: {get_param: metadata}
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash
+            # This is our bootstrap secuence
+            myapp="$selectedapp01"
+            echo "MY APP IS $myapp"
+            PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+            case $myapp in
+            apache)
+                echo "INSTALLING APACHE"
+                if [ -f /etc/debian_version ]
+                then
+                   aptitude -y update
+                   aptitude -y install apache2
+                fi
+                if [ -f /etc/redhat-release ]
+                then
+                   yum -y install httpd
+                   chkconfig httpd on
+                   echo "Hello World" >> /var/www/html/index.html
+                   service httpd start
+                fi
+                ;;
+            nginx)
+                echo "INSTALLING NGINX"
+                if [ -f /etc/debian_version ]
+                then
+                   aptitude -y update
+                   aptitude -y install nginx-full
+                fi
+                if [ -f /etc/redhat-release ]
+                then
+                   yum -y install nginx
+                   chkconfig nginx on
+                   service nginx start
+                fi
+                ;;
+            esac
+            # Comment the following two lines in order if you don't want to force
+            # a autoscale event at boot
+            while [ 1 ] ; do echo $((13**99)) 1>/dev/null 2>&1; done &
+            while [ 1 ] ; do echo $((13**99)) 1>/dev/null 2>&1; done &
+          params:
+            $selectedapp01: {get_param: http_app}
+#
+# LBaaS V2 Member definition
+#
+  member:
+    type: OS::Neutron::LBaaS::PoolMember
+    properties:
+      pool: { get_param: pool_id }
+      address: { get_attr: [server, first_address] }
+      protocol_port: { get_param: server_port }
+      subnet: { get_param: server_subnet }
+

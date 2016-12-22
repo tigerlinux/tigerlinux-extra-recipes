@@ -1,0 +1,109 @@
+
+
+<class 'sqlalchemy.engine.result.RowProxy'>
+(1, 'Kiki', 'Base white with black spots', 3.0, True)
+
+Printing row objects:
+
+ID: 1
+	Cat Name: Kiki
+	Cat Color: Base white with black spots
+	Cat Weight: 3.0
+	Mouse Face ??: True
+
+ID: 1
+	Cat Name: Kiki
+	Car Color: Base white with black spots
+	Car Weight: 3.0
+	Mouse Face ??: True
+ID: 2
+	Cat Name: Rayita
+	Car Color: Creamy white with grey-listed patches
+	Car Weight: 3.5
+	Mouse Face ??: False
+ID: 3
+	Cat Name: Negrito
+	Car Color: Base black with white patches and white belly
+	Car Weight: 4.5
+	Mouse Face ??: False
+
+Query Begin
+
+Row: (1, 'Kiki', 'Base white with black spots', 3.0, True)
+
+Query End
+
+
+Query Begin
+
+Row: (2, 'Rayita', 'Creamy white with grey-listed patches', 3.5, False)
+Row: (3, 'Negrito', 'Base black with white patches and white belly', 4.5, False)
+
+Query End
+
+
+Query Begin
+
+Row: (1, 'Kiki', 'Base white with black spots', 3.0, True)
+
+Query End
+
+
+Query Begin
+
+Row: (2, 'Rayita', 'Creamy white with grey-listed patches', 3.5, False)
+
+Query End
+
+
+Query Begin
+
+Row: (3, 'Negrito', 'Base black with white patches and white belly', 4.5, False)
+
+Query End
+
+
+Query Begin
+
+Row: (1, 'Kiki', 'Base white with black spots', 3.0, True, 1, 'Crazy, but kindred', 'Angel with mouse face!!', 1)
+Row: (2, 'Rayita', 'Creamy white with grey-listed patches', 3.5, False, 2, 'Normally well mooded', 'Angel with claws!!', 2)
+Row: (3, 'Negrito', 'Base black with white patches and white belly', 4.5, False, 3, "Well mooded only within he's relatives", 'A Cat-Lord in all situations', 3)
+
+Query End
+
+
+Query Begin
+
+Row: ('Kiki', 'Angel with mouse face!!')
+Row: ('Rayita', 'Angel with claws!!')
+Row: ('Negrito', 'A Cat-Lord in all situations')
+
+Query End
+
+
+Query Begin
+
+Row: (1, 'Kiki', 'Base white with black spots', 3.0, True, 1, 'Crazy, but kindred', 'Angel with mouse face!!', 1)
+Row: (2, 'Rayita', 'Creamy white with grey-listed patches', 3.5, False, 2, 'Normally well mooded', 'Angel with claws!!', 2)
+Row: (3, 'Negrito', 'Base black with white patches and white belly', 4.5, False, 3, "Well mooded only within he's relatives", 'A Cat-Lord in all situations', 3)
+
+Query End
+
+
+Query Begin
+
+Row: (1, 'Kiki', 'Base white with black spots', 3.0, True, 1, 'Crazy, but kindred', 'Angel with mouse face!!', 1)
+Row: (2, 'Rayita', 'Creamy white with grey-listed patches', 3.5, False, 2, 'Normally well mooded', 'Angel with claws!!', 2)
+Row: (3, 'Negrito', 'Base black with white patches and white belly', 4.5, False, 3, "Well mooded only within he's relatives", 'A Cat-Lord in all situations', 3)
+Row: (4, 'Kisa', 'Lynx grey-white wild pattern', 10.0, False, 4, 'Lynx mood... with a lot of claw-usage', 'Another Angel... when she is in good mood.. ejjeje', 4)
+
+Query End
+
+
+Query Begin
+
+Row: (4, 'Lynzon Kison', 'Lynx grey-white wild pattern', 10.0, False)
+
+Query End
+
+

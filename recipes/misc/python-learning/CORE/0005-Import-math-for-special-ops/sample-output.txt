@@ -1,0 +1,3 @@
+The value of PI is: 3.14159265359
+The squared root of 95 is: 9.74679434481
+More functions explained at: https://docs.python.org/2/library/math.html

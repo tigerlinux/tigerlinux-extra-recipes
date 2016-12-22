@@ -1,0 +1,27 @@
+
+You are trying to get the unexistent attribute name: catname
+None
+Setting attribute catname to value Kiki Ratonila
+{}
+
+
+Setting attribute _catname to: Rayita
+
+Setting attribute _catrace to: Callejera Criolla
+
+Setting attribute _catcolor to: Base creamy white with grey-listed patches
+{'_catcolor': 'Base creamy white with grey-listed patches', '_catname': 'Rayita', '_catrace': 'Callejera Criolla'}
+Returning Cat Name
+Rayita
+Returning Cat Race
+Callejera Criolla
+Returning Cat Color
+Base creamy white with grey-listed patches
+Setting attribute _catname to: Rayita de Rayon
+Returning Cat Name
+Rayita de Rayon
+
+Setting attribute mouseface to: False
+False
+{'_catcolor': 'Base creamy white with grey-listed patches', '_catname': 'Rayita de Rayon', '_catrace': 'Callejera Criolla', 'mouseface': False}
+

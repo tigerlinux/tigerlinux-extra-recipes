@@ -1,0 +1,17 @@
+
+"Nash" is a Two Brown tones, Yorkshire dog
+Special info on this dog: Very good manners !!
+
+"Kiki" is a White with black spots, Cacri (callejero criollo) cat
+Also, the Cat "Kiki" has a mouse face !! :-)
+
+__main__.dogpet
+catpet
+{'color': 'White with black spots', 'race': 'Cacri (callejero criollo)', 'name': 'Kiki', 'catmouseface': True, 'catordog': 'cat'}
+['color', 'race', 'name', 'catmouseface', 'catordog']
+('color', ' -> ', 'Two Brown tones')
+('dogspecialdata', ' -> ', 'Very good manners !!')
+('race', ' -> ', 'Yorkshire')
+('name', ' -> ', 'Nash')
+('catordog', ' -> ', 'dog')
+

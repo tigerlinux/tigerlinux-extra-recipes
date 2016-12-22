@@ -1,0 +1,26 @@
+# Create your bucket with a variable name using:
+# openssl rand -hex 10
+#
+# Sample:
+#
+# openssl rand -hex 10
+# 177ff04f3ea63354d936
+
+
+aws s3api create-bucket --bucket 77ff04f3ea63354d936 --region us-west-2 --acl private
+
+aws s3api list-buckets
+
+aws s3 ls s3://77ff04f3ea63354d936
+
+aws s3 cp ./sample-file.txt s3://77ff04f3ea63354d936
+
+aws s3 ls s3://77ff04f3ea63354d936
+
+aws s3 rm s3://77ff04f3ea63354d936/sample-file.txt
+
+aws s3 ls s3://77ff04f3ea63354d936
+
+aws s3api delete-bucket --bucket 77ff04f3ea63354d936 --region us-west-2
+
+aws s3api list-buckets

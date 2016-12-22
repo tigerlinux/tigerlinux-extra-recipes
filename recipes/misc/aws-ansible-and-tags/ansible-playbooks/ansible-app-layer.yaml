@@ -1,0 +1,117 @@
+#
+# Ansible playbook definition for APP layer deployment.
+# It deploys 4-to-6 APP servers, in different AZ
+# All needed variables in "vars" section
+# Reynaldo R. Martinez P.
+# E-Mail tigerlinux at gmail dot com
+#
+#
+---
+- name: Create APP layer
+  hosts: localhost
+  gather_facts: False
+  vars:
+    vpc_region: us-west-2
+    sec_group: sg-ea0d3993
+    key_name: tigerlinux-01
+    amazon_image: ami-a9d276c9
+    subnet_p1: subnet-f1b12294
+    subnet_p2: subnet-b34591ea
+    machine_type: t2.micro
+    az_p1: us-west-2a
+    az_p2: us-west-2c
+  tasks:
+  - name: app layer launch configuration
+    ec2_lc:
+      name: app_lc
+      image_id: "{{ amazon_image }}"
+      key_name: "{{ key_name }}"
+      region: "{{ vpc_region }}"
+      security_groups: "{{ sec_group }}"
+      instance_type: "{{ machine_type }}"
+      assign_public_ip: yes
+      instance_monitoring: yes
+      user_data: |
+                  #!/bin/bash
+                  DEBIAN_FRONTEND=noninteractive apt-get update
+                  DEBIAN_FRONTEND=noninteractive apt-get -y install apache2
+                  hostname > /var/www/html/index.html
+                  systemctl restart apache2
+                  systemctl enable apache
+
+  - name: Auto Scaling Group
+    ec2_asg:
+      name: app_asg
+      availability_zones:
+         - "{{ az_p1 }}"
+         - "{{ az_p2 }}"
+      launch_config_name: app_lc
+      tags:
+        - environment: devel
+        - applayer: webapps
+      min_size: 4
+      max_size: 6
+      desired_capacity: 4
+      vpc_zone_identifier:
+        - "{{ subnet_p1 }}"
+        - "{{ subnet_p2 }}"
+      region: "{{ vpc_region }}"
+
+  - name: Scaling Policies
+    ec2_scaling_policy:
+      region: "{{ vpc_region }}"
+      name: "{{ item.name }}"
+      asg_name: app_asg
+      state: present
+      adjustment_type: "{{ item.adjustment_type }}"
+      min_adjustment_step: "{{ item.min_adjustment_step }}"
+      scaling_adjustment: "{{ item.scaling_adjustment }}"
+      cooldown: "{{ item.cooldown }}"
+    with_items:
+      - name: "Increase Group Size"
+        adjustment_type: "ChangeInCapacity"
+        scaling_adjustment: +1
+        min_adjustment_step: 1
+        cooldown: 180
+      - name: "Decrease Group Size"
+        adjustment_type: "ChangeInCapacity"
+        scaling_adjustment: -1
+        min_adjustment_step: 1
+        cooldown: 300
+    register: sp_app_asg_result
+
+  - name: Set cloudwatch ScaleUp alarm and relate them to proper Scaling Policy
+    ec2_metric_alarm:
+      region: "{{ vpc_region }}"
+      name: pp_asg-ScaleUp
+      state: present
+      metric: "CPUUtilization"
+      namespace: "AWS/EC2"
+      statistic: "Average"
+      comparison: ">="
+      threshold: 80
+      period: 60
+      evaluation_periods: 2
+      unit: "Percent"
+      dimensions:
+        AutoScalingGroupName: app_asg
+      alarm_actions:
+        - "{{ sp_app_asg_result.results[0].arn }}"
+
+  - name: Set cloudwatch ScaleDown alarm and relate them to proper Scaling Policy
+    ec2_metric_alarm:
+      region: "{{ vpc_region }}"
+      name: pp_asg-ScaleDown
+      state: present
+      metric: "CPUUtilization"
+      namespace: "AWS/EC2"
+      statistic: "Average"
+      comparison: "<="
+      threshold: 15
+      period: 60
+      evaluation_periods: 4
+      unit: "Percent"
+      dimensions:
+        AutoScalingGroupName: app_asg
+      alarm_actions:
+        - "{{ sp_app_asg_result.results[1].arn }}"

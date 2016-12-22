@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# This script will be executed *after* all the other init scripts.
+# You can put your own initialization stuff in here if you don't
+# want to do the full Sys V style init stuff.
+
+touch /var/lock/subsys/local
+
+echo "ACTION==\"add\",SUBSYSTEM==\"net\", IMPORT{program}=\"/lib/udev/rename_device\"" > /etc/udev/rules.d/70-persistent-net.rules
+echo "SUBSYSTEM==\"net\", RUN+=\"/etc/sysconfig/network-scripts/net.hotplug\"" >> /etc/udev/rules.d/70-persistent-net.rules
+
+growpart -v /dev/vda 2 -u auto > /dev/null 2>&1
+resize2fs /dev/vda2 > /dev/null 2>&1
+
+if [ -f /usr/bin/linux_logo ]; then
+        echo "" > /etc/issue
+        /usr/bin/linux_logo -L redhat -t "$R" >> /etc/issue
+        /usr/bin/linux_logo -L redhat -a -t "$R" > /etc/issue.net
+        echo >> /etc/issue
+        cat /etc/issue > /etc/motd
+        echo "" >> /etc/motd
+        echo "Centos 6 Server TIGERLINUX Edition for the CLOUD" >> /etc/motd
+        echo "" >> /etc/motd
+fi
+blkid |grep "swap"|cut -d: -f1|xargs swapon > /dev/null 2>&1
+

@@ -1,0 +1,120 @@
+
+classdata number: 23, and list: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+classdata number: 3, and list: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+classdata number: 63, and list: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+classdata number: 46, and list: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+33
+43
+53
+63
+73
+83
+93
+103
+113
+123
+
+Value in index: 0 is: 0
+Value in index: 1 is: 1
+Value in index: 2 is: 8
+Value in index: 3 is: 27
+Value in index: 4 is: 64
+Value in index: 5 is: 125
+Value in index: 6 is: 216
+Value in index: 7 is: 343
+Value in index: 8 is: 512
+Value in index: 9 is: 729
+Value in index: 10 is: 1000
+Value in index: 11 is: 1331
+Value in index: 12 is: 1728
+Value in index: 13 is: 2197
+Value in index: 14 is: 2744
+Value in index: 15 is: 3375
+Value in index: 16 is: 4096
+Value in index: 17 is: 4913
+Value in index: 18 is: 5832
+Value in index: 19 is: 6859
+Value in index: 20 is: 8000
+Value in index: 21 is: 9261
+Value in index: 22 is: 10648
+Value in index: 23 is: 12167
+Value in index: 24 is: 13824
+Value in index: 25 is: 15625
+Value in index: 26 is: 17576
+Value in index: 27 is: 19683
+Value in index: 28 is: 21952
+Value in index: 29 is: 24389
+Value in index: 30 is: 27000
+Value in index: 31 is: 29791
+Value in index: 32 is: 32768
+Value in index: 33 is: 35937
+Value in index: 34 is: 39304
+Value in index: 35 is: 42875
+Value in index: 36 is: 46656
+Value in index: 37 is: 50653
+Value in index: 38 is: 54872
+Value in index: 39 is: 59319
+Value in index: 40 is: 64000
+Value in index: 41 is: 68921
+Value in index: 42 is: 74088
+Value in index: 43 is: 79507
+Value in index: 44 is: 85184
+Value in index: 45 is: 91125
+Value in index: 46 is: 97336
+Value in index: 47 is: 103823
+Value in index: 48 is: 110592
+Value in index: 49 is: 117649
+Value in index: 50 is: 125000
+Value in index: 51 is: 132651
+Value in index: 52 is: 140608
+Value in index: 53 is: 148877
+Value in index: 54 is: 157464
+Value in index: 55 is: 166375
+Value in index: 56 is: 175616
+Value in index: 57 is: 185193
+Value in index: 58 is: 195112
+Value in index: 59 is: 205379
+Value in index: 60 is: 216000
+Value in index: 61 is: 226981
+Value in index: 62 is: 238328
+Value in index: 63 is: 250047
+Value in index: 64 is: 262144
+Value in index: 65 is: 274625
+Value in index: 66 is: 287496
+Value in index: 67 is: 300763
+Value in index: 68 is: 314432
+Value in index: 69 is: 328509
+Value in index: 70 is: 343000
+Value in index: 71 is: 357911
+Value in index: 72 is: 373248
+Value in index: 73 is: 389017
+Value in index: 74 is: 405224
+Value in index: 75 is: 421875
+Value in index: 76 is: 438976
+Value in index: 77 is: 456533
+Value in index: 78 is: 474552
+Value in index: 79 is: 493039
+Value in index: 80 is: 512000
+Value in index: 81 is: 531441
+Value in index: 82 is: 551368
+Value in index: 83 is: 571787
+Value in index: 84 is: 592704
+Value in index: 85 is: 614125
+Value in index: 86 is: 636056
+Value in index: 87 is: 658503
+Value in index: 88 is: 681472
+Value in index: 89 is: 704969
+Value in index: 90 is: 729000
+Value in index: 91 is: 753571
+Value in index: 92 is: 778688
+Value in index: 93 is: 804357
+Value in index: 94 is: 830584
+Value in index: 95 is: 857375
+Value in index: 96 is: 884736
+Value in index: 97 is: 912673
+Value in index: 98 is: 941192
+Value in index: 99 is: 970299
+
+classdata number: 123, and list: [0, 1, 8, 27, 64, 125, 216, 343, 512, 729, 1000, 1331, 1728, 2197, 2744, 3375, 4096, 4913, 5832, 6859, 8000, 9261, 10648, 12167, 13824, 15625, 17576, 19683, 21952, 24389, 27000, 29791, 32768, 35937, 39304, 42875, 46656, 50653, 54872, 59319, 64000, 68921, 74088, 79507, 85184, 91125, 97336, 103823, 110592, 117649, 125000, 132651, 140608, 148877, 157464, 166375, 175616, 185193, 195112, 205379, 216000, 226981, 238328, 250047, 262144, 274625, 287496, 300763, 314432, 328509, 343000, 357911, 373248, 389017, 405224, 421875, 438976, 456533, 474552, 493039, 512000, 531441, 551368, 571787, 592704, 614125, 636056, 658503, 681472, 704969, 729000, 753571, 778688, 804357, 830584, 857375, 884736, 912673, 941192, 970299]
+

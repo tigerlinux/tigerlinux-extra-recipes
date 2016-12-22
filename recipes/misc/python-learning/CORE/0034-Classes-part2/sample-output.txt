@@ -1,0 +1,12 @@
+
+The Cat with name "kiki Ratonilla" is "Base White with Black Spots" and has a mouse face!!
+
+Module with the classes:
+NombreDeGato:
+    Methods: setname(name) and printname
+DatosDeGato:
+    Methods: setname(name), setcolor(color), printname, printcolor, printcolorandname
+MasDatosDeGato:
+    Methods: setname(name), setcolor(color), printname, printcolor, printcolorandname, caraderaton(bool)
+
+

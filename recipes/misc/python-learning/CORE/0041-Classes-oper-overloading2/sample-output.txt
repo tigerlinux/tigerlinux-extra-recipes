@@ -1,0 +1,10 @@
+
+2 ^ 2 is: 4
+2 ^ 5 is: 32
+
+False
+True
+Yes it's TRUE!!
+
+I'm dead now and my last value was: 2
+

@@ -1,0 +1,12 @@
+---
+- hosts: cloudgroup
+  user: ansible
+  become: yes
+  become_method: sudo
+  vars:
+    hello_message: "HELLO WORLD\n"
+  tasks:
+    - name: Setup a hello world file
+      copy:
+        dest: /etc/hello-world.txt
+        content: "{{ hello_message }}"

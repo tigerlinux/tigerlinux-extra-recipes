@@ -1,0 +1,2 @@
+Hello World - Directly printed
+Hello World - As a variable

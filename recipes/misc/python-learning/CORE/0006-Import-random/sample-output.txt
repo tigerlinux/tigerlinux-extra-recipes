@@ -1,0 +1,3 @@
+This is a random number: 0.0969373242478
+Let's pick a number from the list: [23, 56, 89, 112] : 112
+More random-lib functions explained at: https://docs.python.org/2/library/random.html

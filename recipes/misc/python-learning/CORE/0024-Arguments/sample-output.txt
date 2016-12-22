@@ -1,0 +1,43 @@
+
+Original tuple: (2,)
+2
+
+Original tuple: ('Kiki', 2, 'Ratiya', 5, 'Negrito', 6)
+Kiki
+2
+Ratiya
+5
+Negrito
+6
+
+Original dictionary: {'gato1': 'kiki', 'gato2': 'rayita', 'gato3': 'negrito'}
+Key: gato1, value: kiki
+Key: gato2, value: rayita
+Key: gato3, value: negrito
+
+Original dictionary: {'val3': 2.0, 'val2': 4.67, 'val1': 5.32, 'val4': 5}
+Key: val1, value: 5.32
+Key: val2, value: 4.67
+Key: val3, value: 2.0
+Key: val4, value: 5
+
+[2, 4, 6, 8, 10]
+[1, 3, 5, 7, 9]
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+The cat name is "Kiki", and weights 3.0 Kg's
+The cat does have a Mouse Face
+And the cat color pattern is White base with black spots
+
+The cat name is "Default Cat", and weights 0.0 Kg's
+The cat does not have a Mouse Face
+And the cat color pattern is white
+
+The cat name is "Negrito", and weights 4.5 Kg's
+The cat does not have a Mouse Face
+And the cat color pattern is Black whith some white spots
+
+The cat name is "Rayita", and weights 0.0 Kg's
+The cat does not have a Mouse Face
+And the cat color pattern is Creamy white with gray-listed spots
+

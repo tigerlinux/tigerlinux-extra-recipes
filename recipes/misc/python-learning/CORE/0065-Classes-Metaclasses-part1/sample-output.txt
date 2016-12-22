@@ -1,0 +1,47 @@
+
+Creating Metaclass "metaclass1". You'll see nothing here... yet !
+
+Creating myclass with __metaclass__ = metaclass1. You'll see some messages here
+
+Metaclass call to __new__. Data: 
+	Classname: myclass
+	Supers: (<type 'object'>,)
+	Class Dictionary: {'myfunctioninclass': <function myfunctioninclass at 0x7f00ade48e60>, '__module__': '__main__', '__metaclass__': <class '__main__.metaclass1'>, '__init__': <function __init__ at 0x7f00ade48de8>, 'myclassvar': 'Hello Cats!'}
+
+
+Creating an instance... again, no messages. Only some prints from the instance itself and the INIT from the class "myclass"
+
+Calling INIT in class "myclass"
+Object name: myclass
+
+Hello Cats!
+Hello Cats! ... and more Cats!!
+
+Creating Metaclass "metaclass2". You'll see nothing here... yet !
+
+Creating myclass2 with __metaclass__ = metaclass2. You'll see some messages here from __new__ and __init__
+
+Metaclass call to __new__. Data: 
+	Classname: myclass2
+	Supers: (<type 'object'>,)
+	Class Dictionary: {'__module__': '__main__', '__metaclass__': <class '__main__.metaclass2'>, 'myfunctioninclass': <function myfunctioninclass at 0x7f00ade510c8>, 'myclassvar': 'Hello Cats at myclass2!!', 'myfunction2inclass': <function myfunction2inclass at 0x7f00ade51140>, '__init__': <function __init__ at 0x7f00ade51050>}
+
+
+Metaclass call to __init__. Data: 
+	Classname: myclass2
+	Supers: (<type 'object'>,)
+	Class Dictionary: {'__module__': '__main__', '__metaclass__': <class '__main__.metaclass2'>, 'myfunctioninclass': <function myfunctioninclass at 0x7f00ade510c8>, 'myclassvar': 'Hello Cats at myclass2!!', 'myfunction2inclass': <function myfunction2inclass at 0x7f00ade51140>, '__init__': <function __init__ at 0x7f00ade51050>}
+Class Object name: metaclass2
+Class object initialization. Class data: ['__dict__', '__module__', '__metaclass__', 'myclassvar', 'myfunctioninclass', 'myvarininit', '__weakref__', 'myfunction2inclass', '__init__', '__doc__']
+
+
+Creating an instance... again, no messages. Only some prints from the instance itself and the INIT from the class "myclass2"
+
+Calling INIT in class "myclass2"
+Object name: myclass2
+
+Hello Cats at myclass2!!
+Hello Cats at myclass2!! ... or maybe not!!
+The World is TWISTED but KIKI will... save it ???
+Our string inherited from metaclass2 is: The World is TWISTED but KIKI will... save it ???
+

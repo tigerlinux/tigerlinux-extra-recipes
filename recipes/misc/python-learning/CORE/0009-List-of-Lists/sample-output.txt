@@ -1,0 +1,16 @@
+This is my list-of-lists: [[1, 2, 3], [4, 6, 7], [8, 9, 10]]
+In matrix form: 
+
+[1, 2, 3]
+[4, 6, 7]
+[8, 9, 10]
+
+This is the first row of my matrix: [1, 2, 3]
+This is the second element of the third row of my matrix: 9
+The value of the items in the second column are: [2, 6, 9]
+The value of the even numbers in the second column are: [2, 6]
+The values of the items in the second column, multipled by 4 are: [8, 24, 36]
+The "NW" to "SE" diagonal of our matrix is: [1, 6, 10]
+The original string was "rayada" and this is a new list: ['rrr', 'aaa', 'yyy', 'aaa', 'ddd', 'aaa']
+The sum of every row from the matrix [[1, 2, 3], [4, 6, 7], [8, 9, 10]] is: [6, 17, 27]
+The sum of every column from the matrix [[1, 2, 3], [4, 6, 7], [8, 9, 10]] is: [13, 17, 20]

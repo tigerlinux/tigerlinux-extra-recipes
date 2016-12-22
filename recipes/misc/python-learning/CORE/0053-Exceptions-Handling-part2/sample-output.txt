@@ -1,0 +1,30 @@
+
+('My list is: ', [1, 2, 3, 4])
+
+Code ran OK !!
+4
+
+Ohh crap !!. We broke python again !!
+-1
+
+
+No exception ocurrences detected
+5
+
+Ohhh well... nothing's perfect !!. Index out or range !!
+-1
+
+Ehhh... negative number detected !!
+-99
+
+
+No exceptions ocurrences detected
+5
+
+Index out of range
+-1
+
+Negative number detected
+-99
+
+

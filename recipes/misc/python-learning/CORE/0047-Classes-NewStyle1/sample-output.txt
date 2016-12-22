@@ -1,0 +1,15 @@
+
+My string is: Kiki is a CAT
+
+My string is: Kiki is a CAT, my number is: 3.5, and my list is: [1, 2, 3, 4, 5]
+
+My string is: Hola Kiki!!, my number is: 2.3 the list is: [1, 4, 8, 16, 32] and extras: {'mybool': True}
+My string is: Hola Kiki!!, my number is: 2.3 the list is: [1, 4, 8, 16, 32] and extras: {'mybool2': False, 'mybool': True}
+
+('mybool2', ' => ', False)
+('mybool', ' => ', True)
+('string1', ' => ', 'Hola Kiki!!')
+('number1', ' => ', 2.3)
+('list1', ' => ', [1, 4, 8, 16, 32])
+('__dict__', ' => ', {'mybool2': False, 'mybool': True})
+

@@ -1,0 +1,67 @@
+---
+- name: Install apache, in a yum-based machine
+  yum:
+    name:
+      - httpd
+      - httpd-manual
+      - httpd-tools
+      - php
+      - mod_wsgi
+    state: latest
+  notify: restart httpd
+  when: ansible_os_family == "RedHat"
+
+- name: Install apache, in a apt-based machine with Debian 8
+  apt:
+    name:
+      - apache2
+      - apache2-doc
+      - apache2-utils
+      - libapache2-mod-php5
+      - libapache2-mod-python
+    state: latest
+  notify: restart apache2
+  when: ansible_distribution == "Debian" and ansible_distribution_major_version == "8"
+
+- name: Install apache, in a apt-based machine with Ubuntu 16
+  apt:
+    name:
+      - apache2
+      - apache2-doc
+      - apache2-utils
+      - libapache2-mod-php
+      - libapache2-mod-python
+    state: latest
+  notify: restart apache2
+  when: ansible_distribution == "Ubuntu" and ansible_distribution_major_version == "16"
+
+- name: Apache - RHELs
+  service:
+    name:
+      httpd
+    enabled:
+      yes
+    state:
+      started
+  when: ansible_os_family == "RedHat"
+
+- name: Apache - Debians
+  service:
+    name:
+      apache2
+    enabled:
+      yes
+    state:
+      started
+  notify: restart apache2
+  when: ansible_os_family == "Debian"
+
+- name: copy main index
+  copy:
+    src: index.html
+    dest: /var/www/html/index.html
+
+- name: set special usage template
+  template:
+    src: server-extra-info.j2
+    dest: /var/www/html/server-extra-info.html

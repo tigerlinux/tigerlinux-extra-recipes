@@ -1,0 +1,52 @@
+
+X-WING
+
+STARSHIP SPECS FOLLOWS: 
+	Name:  X-Wing
+	Class: Fighter Class
+	Speed: 40.5 Light-years per hour
+
+Our flotilla has the following ships: ['X-Wing']
+
+
+STARSHIP SPECS FOLLOWS: 
+	Name:  B-Wing
+	Class: Space Superiority Fighter
+	Speed: 90.5 Light-years per hour
+
+
+STARSHIP SPECS FOLLOWS: 
+	Name:  Y-Wing
+	Class: Space Atack/Bomber
+	Speed: 60.32 Light-years per hour
+
+
+And now, our flotilla:
+
+['X-Wing', 'B-Wing', 'Y-Wing']
+['X-Wing', 'B-Wing', 'Y-Wing']
+['X-Wing', 'B-Wing', 'Y-Wing']
+['X-Wing', 'B-Wing', 'Y-Wing']
+
+Removing the B-WING from our flotilla..
+
+We'll remove B-Wing from our flotilla
+
+
+And now, our flotilla:
+
+['X-Wing', 'Y-Wing']
+['X-Wing', 'Y-Wing']
+['X-Wing', 'Y-Wing']
+
+Destroying the remaining fleet... we are defenseless against the empire of Darth Pythonic !!
+
+We'll remove X-Wing from our flotilla
+
+We'll remove Y-Wing from our flotilla
+
+
+And now, our flotilla:
+
+[]
+

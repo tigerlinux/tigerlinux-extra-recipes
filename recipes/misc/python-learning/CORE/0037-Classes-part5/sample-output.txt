@@ -1,0 +1,27 @@
+
+('The cat name is: ', 'Kiki')
+('The cat color is: ', 'Base white with black spots')
+('The cat weight is: ', 3.2)
+The cat has a mouse face
+The cat name is: Kiki, with weight: 3.2, color: Base white with black spots, and has a mouse face
+{'color': 'Base white with black spots', 'name': 'Kiki', 'weight': 3.2, 'mouseface': True}
+
+('The cat name is: ', 'Rayita')
+('The cat color is: ', 'Creamy white with gray-listed patches')
+('The cat weight is: ', 4.0)
+The cat does not has a mouse face
+The cat name is: Rayita, with weight: 4.0, color: Creamy white with gray-listed patches, and does not has a mouse face
+{'color': 'Creamy white with gray-listed patches', 'name': 'Rayita', 'weight': 4.0, 'mouseface': False}
+
+('The cat name is: ', 'Negrito')
+('The cat color is: ', 'Black with white belly')
+('The cat weight is: ', 4.5)
+The cat does not has a mouse face
+The cat name is: Negrito, with weight: 4.5, color: Black with white belly, and does not has a mouse face
+{'color': 'Black with white belly', 'name': 'Negrito', 'weight': 4.5, 'mouseface': False}
+
+('The cat name is: ', 'Negrura de Gato')
+('The cat color is: ', 'Black with white belly')
+('The cat weight is: ', 4.5)
+The cat does not has a mouse face
+

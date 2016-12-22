@@ -1,0 +1,19 @@
+
+1^2=1
+2^3=8
+3^4=81
+4^5=1024
+
+1^2=1
+2^3=8
+3^4=81
+4^5=1024
+
+Original lists: ['a', 'b', 'c', 'd'] and [1, 2, 3]
+List with zip : [('a', 1), ('b', 2), ('c', 3)]
+List with map : [('a', 1), ('b', 2), ('c', 3), ('d', None)]
+
+My first list is: ['gato1', 'gato2', 'gato3']
+My second list is: ['Kiki', 'Rayita', 'Negrito']
+The dictionary resulting from using zip is: {'gato1': 'Kiki', 'gato2': 'Rayita', 'gato3': 'Negrito'}
+

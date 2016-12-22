@@ -1,0 +1,27 @@
+
+X-Wing name and speed:
+*** Obtaining starship name ***
+X-Wing
+*** Obtaining starship maximun FTL Speed ***
+3.4
+
+*** Setting starship name ***
+*** Setting starship maximun FTL Speed ***
+
+*** Obtaining starship name ***
+Y-Wing Heavy Bomber
+*** Obtaining starship maximun FTL Speed ***
+16.3
+
+*** Clearing starship name ***
+*** Clearing starship FTL Speed ***
+
+*** Setting starship name ***
+*** Setting starship maximun FTL Speed ***
+
+*** Obtaining starship name ***
+B-Wing Space Superiority Fighter
+*** Obtaining starship maximun FTL Speed ***
+40.23
+
+

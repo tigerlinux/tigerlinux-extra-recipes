@@ -1,0 +1,46 @@
+
+{u'Owner': {u'DisplayName': 'rrmartinezp', u'ID': '9ffb9090f21f616ff2a23310e6d96814c7cb01ae416ab8e9a598c5314da10a9d'}, u'Buckets': [], 'ResponseMetadata': {'HTTPStatusCode': 200, 'RetryAttempts': 0, 'HostId': 'WVYqJmF+KTvIy0ittCOyFYP08ZW/ipRFtBM5F0DC+KPwWp7e4Vt+j473xrh21/K7gD40ovi/4v0=', 'RequestId': 'F90306DEEBCC2540', 'HTTPHeaders': {'x-amz-id-2': 'WVYqJmF+KTvIy0ittCOyFYP08ZW/ipRFtBM5F0DC+KPwWp7e4Vt+j473xrh21/K7gD40ovi/4v0=', 'server': 'AmazonS3', 'transfer-encoding': 'chunked', 'x-amz-request-id': 'F90306DEEBCC2540', 'date': 'Wed, 19 Oct 2016 16:58:10 GMT', 'content-type': 'application/xml'}}}
+
+
+LISTING BUCKETS AND ITS CONTENTS
+
+
+You have NO buckets to list
+
+
+CREATING A NEW BUCKET NAMED:177ff04f3ea63354d936
+
+LISTING BUCKETS AND ITS CONTENTS
+
+
+You have "1" Bucket(s) !!
+
+Bucket number "1"
+	Bucket name: 177ff04f3ea63354d936
+
+	Bucket contents (maximun 5 items listed): 
+
+		The bucket is empty
+
+COPYING AN OBJECT INTO THE BUCKET NAMED: 177ff04f3ea63354d936
+
+LISTING BUCKETS AND ITS CONTENTS
+
+
+You have "1" Bucket(s) !!
+
+Bucket number "1"
+	Bucket name: 177ff04f3ea63354d936
+
+	Bucket contents (maximun 5 items listed): 
+
+		File: sample-file.txt, size: 15 Bytes
+
+DELETING THE BUCKET NAMED: 177ff04f3ea63354d936 AND IT'S CONTENTS
+
+LISTING BUCKETS AND ITS CONTENTS
+
+
+You have NO buckets to list
+
+

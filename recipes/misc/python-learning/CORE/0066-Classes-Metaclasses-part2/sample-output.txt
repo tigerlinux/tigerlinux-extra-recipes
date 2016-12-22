@@ -1,0 +1,47 @@
+
+
+Called by class: myclass1
+This metaclass has been called 1 times
+
+
+Called by class: myclass2
+This metaclass has been called 2 times
+
+Welcome to the Jungle !!
+Welcome to Python !!
+
+
+Creating the SuperClass "metaclass2"
+
+Creating the subclass "submetaclass1"
+
+Creating the class "myclass3"
+Metaclass call to __call__ in "metaclass2" SuperClass. Data: 
+	Classname: myclass3
+	Supers: (<type 'object'>,)
+	Class Dictionary: {'__module__': '__main__', '__metaclass__': <class '__main__.submetaclass1'>, '__str__': <function __str__ at 0x7f0239ffb050>, 'myclassstr1': 'Welcome to Python !!'}
+
+
+Calling __new__ in "submetaclass1" sub-metaclass by class:myclass3
+Calling __init__ in "submetaclass1" sub-metaclass by class:myclass3
+
+Creating a class instances from "myclass3" and printing it's value by calling __str__
+
+Welcome to Python !!
+
+
+Creating the class "myclass4" subclassed from "myclass3"
+
+Metaclass call to __call__ in "metaclass2" SuperClass. Data: 
+	Classname: myclass4
+	Supers: (<class '__main__.myclass3'>,)
+	Class Dictionary: {'__module__': '__main__'}
+
+
+Calling __new__ in "submetaclass1" sub-metaclass by class:myclass4
+Calling __init__ in "submetaclass1" sub-metaclass by class:myclass4
+
+Creating an instance from "myclass4" and print it's value by calling __str__
+
+Welcome to Python !!
+

@@ -1,0 +1,22 @@
+
+('The actual number is: ', 1)
+('The actual number is: ', 2)
+('The actual number is: ', 3)
+('The actual number is: ', 4)
+('The actual number is: ', 5)
+('The actual number is: ', 6)
+('The actual number is: ', 7)
+('The actual number is: ', 8)
+
+('The actual number is: ', 5)
+('The actual number is: ', 4)
+('The actual number is: ', 3)
+('The actual number is: ', 1)
+('The actual number is: ', 0)
+('The actual number is: ', -1)
+Traceback (most recent call last):
+  File "./exceptions-handling3.py", line 35, in <module>
+    myassertion(mylist2)
+  File "./exceptions-handling3.py", line 22, in myassertion
+    assert number >= 0, "ALERT: The number must be possitive, and %s is not positive" % number
+AssertionError: ALERT: The number must be possitive, and -1 is not positive

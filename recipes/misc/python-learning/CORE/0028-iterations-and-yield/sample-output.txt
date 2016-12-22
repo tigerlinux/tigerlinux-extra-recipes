@@ -1,0 +1,23 @@
+
+0
+1
+4
+
+My value is: 0
+My value is: 1
+My value is: 4
+My value is: 9
+My value is: 16
+My value is: 25
+My value is: 36
+My value is: 49
+My value is: 64
+My value is: 81
+
+0
+1
+2
+3
+Generator Finished by User Request !!
+None
+
