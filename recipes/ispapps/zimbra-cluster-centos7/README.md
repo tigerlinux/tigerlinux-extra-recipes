@@ -1149,7 +1149,7 @@ Finally, and in order to ensure all permisions fixed and everything working OK, 
 /etc/init.d/zimbra stop
 yum -y erase zimbra-proxy zimbra-proxy-base zimbra-proxy-components
 killall postdrop
-killall -9 zimbra
+killall -9 -u zimbra
 /opt/zimbra/libexec/zmfixperms -extended -verbose
 /etc/init.d/zimbra start
 ```
