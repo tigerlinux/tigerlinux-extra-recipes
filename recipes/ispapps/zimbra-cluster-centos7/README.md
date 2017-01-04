@@ -433,7 +433,7 @@ And ensure your other node (172.16.70.51) is the secondary:
 drbdadm secondary zimbradrbd
 ```
 
-In your first server (172.16.70.51, which is your drbd primary rigth now) proceed to create the xfs filesystem for zimbra:
+In your first server (172.16.70.58, which is your drbd primary rigth now) proceed to create the xfs filesystem for zimbra:
 
 ```bash
 mkfs.xfs -L zimbra01 /dev/drbd0
