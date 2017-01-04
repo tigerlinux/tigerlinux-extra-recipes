@@ -1136,6 +1136,9 @@ zmprov ms `zmhostname` -zimbraServiceEnabled imapproxy
 zmprov ms `zmhostname` -zimbraServiceInstalled memcached
 zmprov ms `zmhostname` -zimbraServiceInstalled imapproxy
 
+zmprov ms `zmhostname` -zimbraServiceEnabled proxy
+zmprov ms `zmhostname` -zimbraServiceInstalled proxy
+
 zmproxyctl stop
 zmmemcachedctl stop
 zmcontrol stop
