@@ -52,22 +52,50 @@ Run the following commands:
 
 ```bash
 cd /var/www
-wget http://www.redmine.org/releases/redmine-3.1.1.tar.gz
-tar -xzvf redmine-3.1.1.tar.gz
-mv redmine-3.1.1 redmine
-rm -f redmine-3.1.1.tar.gz
+wget http://www.redmine.org/releases/redmine-3.1.7.tar.gz
+tar -xzvf redmine-3.1.7.tar.gz
+mv redmine-3.1.7 redmine
+rm -f redmine-3.1.7.tar.gz
+```
+
+Edit the following file:
+
+```bash
+vi cd /var/www/redmine/Gemfile
+```
+
+And, change the version for the "nokogiri" gem to whatever version it has to specifically 1.6.7.2:
+
+Change:
+
+```bash
+gem "nokogiri", ">= 1.6.7.2"
+```
+
+To:
+
+```bash
+gem "nokogiri", "= 1.6.7.2"
+```
+
+**NOTE: More newer nokogiri versions need ruby 2.1.x, but centos 7 comes with ruby 2.0.x. If you let nokogiry with >= instead of =, the "bundle install" instruction bellow will just fail !.**
+
+
+Then, after completing the "nokogiri" patch above, run the following commands:
+
+```bash
 cd /var/www/redmine
 bundle install --without postgresql sqlite test development
 ```
 
 **NOTES:**
-* At the moment we performed this installation, the lattest stable version was redmine 3.1.1. There are more recent versions in series 3.1, 3.2 and 3.3, but, prior to adventure yourself to use those versions, check for plugin compatibility with the version you want to use.
+* At the moment we performed this installation, the lattest stable version was redmine 3.1.7. There are more recent versions in series 3.1, 3.2 and 3.3, but, prior to adventure yourself to use those versions, check for plugin compatibility with the version you want to use.
 * We are using MariaDB as Database Backend, and only production environment. That's the reason for the parameters `"--without postgresql sqlite test development"`.
 
 
 ### Database Software Installation and Redmine database Creation:
 
-Before we start our database engine, we need to ensure "max_allowed_packet" is set to 32M, or, your redmine could eventualy fail.
+Before we start our database engine, we need to ensure "max_allowed_packet" is set to at least 32M, or, your redmine could eventualy fail.
 
 Edit the file:
 
@@ -176,15 +204,18 @@ vi Gemfile
 In the "gems" section, include coderay_bash at the end of the gem list:
 
 ```bash
-gem "rails", "4.2.0"
-gem "jquery-rails", "~> 3.1.1"
+gem "rails", "4.2.7.1"
+gem "jquery-rails", "~> 3.1.4"
 gem "coderay", "~> 1.1.0"
 gem "builder", ">= 3.0.4"
 gem "request_store", "1.0.5"
-gem "mime-types"
+gem "mime-types", (RUBY_VERSION >= "2.0" ? "~> 3.0" : "~> 2.99")
 gem "protected_attributes"
 gem "actionpack-action_caching"
 gem "actionpack-xml_parser"
+gem "loofah", "~> 2.0"
+gem "mimemagic"
+# For bash syntax highlighting:
 gem "coderay_bash"
 ```
 
@@ -225,6 +256,21 @@ email_delivery:
     authentication: :login
     user_name: "redmine@mycompanydomain.dom"
     password: "My-Email-Password"
+```
+
+Anothe sample, using ssl instead of tls (typical of something like GMAIL, or, a domain in godaddy):
+
+```bash
+email_delivery:
+  delivery_method: :smtp
+  smtp_settings:
+    ssl: true
+    address: "smtpout.secureserver.net"
+    port: 465
+    domain: "mysuperdomainingoddady.tld"
+    authentication: :plain
+    user_name: "redmine@mysuperdomainingoddady.tld"
+    password: "My-Email-Password
 ```
 
 Save the file.
@@ -383,16 +429,20 @@ vi /var/www/redmine/Gemfile
 And add thin to the end of gem list, just after coderay_bash:
 
 ```bash
-gem "rails", "4.2.0"
-gem "jquery-rails", "~> 3.1.1"
+gem "rails", "4.2.7.1"
+gem "jquery-rails", "~> 3.1.4"
 gem "coderay", "~> 1.1.0"
 gem "builder", ">= 3.0.4"
 gem "request_store", "1.0.5"
-gem "mime-types"
+gem "mime-types", (RUBY_VERSION >= "2.0" ? "~> 3.0" : "~> 2.99")
 gem "protected_attributes"
 gem "actionpack-action_caching"
 gem "actionpack-xml_parser"
+gem "loofah", "~> 2.0"
+gem "mimemagic"
+# For bash syntax highlighting:
 gem "coderay_bash"
+# Thin support:
 gem "thin"
 ```
 
@@ -579,8 +629,8 @@ Save the file and run:
 
 ```bash
 cd /var/www/redmine
-gem install rdoc
-gem install rdoc-data
+gem install rdoc --version '4.1.0'
+gem install rdoc-data --version '4.1.0'
 rdoc-data --install --verbose
 ```
 
@@ -593,10 +643,16 @@ vi /var/www/redmine/Gemfile
 We need to add this after the last gem (normally, gem "thin"):
 
 ```bash
-gem "rdoc", ">= 2.4.2"
+gem "rdoc", "=4.1.0"
 ```
 
-Then we proceed to execute:
+NOTE: You'll find multiple ocurrences of the "rdoc" gem in the gemfile. Please ensure that all of them are set to:
+
+```bash
+gem "rdoc", "=4.1.0"
+```
+
+Save the file and:
 
 ```bash
 cd /var/www/redmine
