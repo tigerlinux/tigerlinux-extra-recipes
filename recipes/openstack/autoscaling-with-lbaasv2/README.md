@@ -1,4 +1,4 @@
-# A HEAT TEMPLATE WITH AUTOSCALING AND LBAAS V2 FOR OPENSTACK MITAKA
+# A HEAT TEMPLATE WITH AUTOSCALING AND LBAAS V2 FOR OPENSTACK MITAKA/NEWTON
 
 - **By Reinaldo Martínez P.**
 - **Caracas, Venezuela.**
@@ -76,6 +76,16 @@ heat stack-create \
 my-stack-with-lbaasv2-and-autoscaling
 ```
 
+Or, if you are using the "openstack cli":
+
+```bash
+openstack stack create \
+-e Template-AutoScaling-LBaaSV2-ENV-LocalCLI.yaml \
+--enable-rollback \
+-t Template-AutoScaling-LBaaSV2.yaml \
+my-stack-with-lbaasv2-and-autoscaling
+```
+
 NOTE: You need to have all files in the same directory, specially the file "webserver_lb.yaml".
 
 If you don't want to change the parameters inside the main template, you can set the parameters from heat. Sample:
@@ -88,6 +98,24 @@ heat stack-create \
 -P my_accesskey="my-super-ssh-key"\
 -P my_image="Ubuntu-1404lts-32-Cloud"\
 -r \
+my-stack-with-lbaasv2-and-autoscaling
+```
+
+Again, using the "opentsack cli":
+
+```bash
+openstack stack create \
+-e Template-AutoScaling-LBaaSV2-ENV-LocalCLI.yaml \
+--enable-rollback \
+--parameter my_flavor="m1.normal" \
+--parameter my_accesskey="tigerlinux-01" \
+--parameter my_image="Ubuntu-1404lts-32-Cloud" \
+--parameter my_network="shared-02" \
+--parameter my_subnet="subnet-shared-02" \
+--parameter my_zone="nova" \
+--parameter app_port="80" \
+--parameter application_install="apache" \
+-t Template-AutoScaling-LBaaSV2.yaml \
 my-stack-with-lbaasv2-and-autoscaling
 ```
 

@@ -245,11 +245,18 @@ resources:
 outputs:
   Scale-UP-URL:
     value: {get_attr: [scaleup_policy, alarm_url]}
+    description: Scale-UP ALARM URL
   Scale-DOWN-URL:
     value: {get_attr: [scaledown_policy, alarm_url]}
+    description: Scale-DOWN ALARM URL
   Scale-UP-SIGNAL-URL:
     value: {get_attr: [scaleup_policy, signal_url]}
+    description: Scale-UP Signal URL
   Scale-DOWN-SIGNAL-URL:
     value: {get_attr: [scaledown_policy, signal_url]}
+    description: Scale-DOWN Signal URL
+  LB-URL-VIP:
+    value: {get_attr: [lb, vip_address]}
+    description: VIP for our Load Balancer
 
 
