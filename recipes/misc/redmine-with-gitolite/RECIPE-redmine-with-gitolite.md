@@ -1,4 +1,4 @@
-# A Redmine Installation with Gitolite Integration ON CENTOS 7.
+# [A Redmine Installation with Gitolite Integration ON CENTOS 7.](http://tigerlinux.github.io)
 
 - **By Reinaldo Martínez P.**
 - **Caracas, Venezuela.**
