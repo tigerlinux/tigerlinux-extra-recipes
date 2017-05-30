@@ -1,6 +1,6 @@
-# [LAB: OWNCLOUD SERVER USING CEPH-RBD FOR PRIMARY BACKING STORAGE AND CEPH-S3 FOR ADDITIONAL EXTERNAL STORAGE](http://tigerlinux.github.io)
+# [LAB: OWNCLOUD SERVER USING CEPH-RBD FOR PRIMARY BACKING STORAGE AND CEPH-S3 FOR ADDITIONAL EXTERNAL STORAGE + NEXTCLOUD WITH FULL CEPH-S3 PRIMARY STORAGE BACKEND](http://tigerlinux.github.io)
 
-- **By Reinaldo MartÌnez P.**
+- **By Reinaldo Mart√≠nez P.**
 - **Caracas, Venezuela.**
 - **TigerLinux AT gmail DOT com**
 - **[My Google Plus Site](https://plus.google.com/+ReinaldoMartinez)**
@@ -11,11 +11,12 @@
 
 ## What we want to acomplish ?:
 
-We want to acomplish two major goals here:
+We want to acomplish four major goals here:
 
 * Install/deploy a fully working CEPH Cluster using Centos 7.
 * Install Owncloud on Centos 7, and configure it to use a CEPH-Based rbd-pool in the CEPH Cluster as primary storage.
 * Add a "external storage" option in owncloud with a bucket created in CEPH-S3.
+* Replace Owncloud with Nextcloud, and configure it to use the native CEPH-S3 Object Storage as primary storage backend
 
 
 ## Where are we going to install it ?:
@@ -36,7 +37,7 @@ Nodes IP and names:
 
 We'll use the first node (server-71) as "deploy node" too.
 
-For the application part (the Owncloud Server) we will use another Centos 7 machine, 2 VCPU's, 2 GB's RAM, 4 GB's Swap disk, 60GB HD for the Operating System, with only one NIC in the same CEPH-Cluster primary network. Name: server-70, IP 192.168.56.70.
+For the application part (the Owncloud/Nextcloud Server) we will use another Centos 7 machine, 2 VCPU's, 2 GB's RAM, 4 GB's Swap disk, 60GB HD for the Operating System, with only one NIC in the same CEPH-Cluster primary network. Name: server-70, IP 192.168.56.70.
 
 All nodes are correctly NTP and DNS Configured (all hostname fully resolvable across all 4 servers). SELINUX and FirewallD disabled, and, EPEL repo already installed and enabled on all four servers.
 
@@ -319,7 +320,7 @@ pg_num: 64
 
 ```
 
-The minimun "recommended" PG's x OSD is 20, and the m·ximun is 32 (this is something I recommend the lector to review on ceph online documentation).
+The minimun "recommended" PG's x OSD is 20, and the m√°ximun is 32 (this is something I recommend the lector to review on ceph online documentation).
 
 For our 6 OSD's, our minimun would be 6 x 20 = 120 PG/PGP, and our maximun 6 x 32 = 192 PG/PGP. If you set the minimun for this (30, according to the healht message), 6 x 30 = 180. We can set to the actual minimun ceph expects (180) with the following commands:
 
@@ -562,7 +563,7 @@ Exit the ceph-deploy account.
 
 Because our owncloud node is also admin, we can create a volume inside, but, first some calculations....
 
-Our CEPH cluster size (total) is 32GB x 6 = 192GB, but, because our replica factor is 2 (the object and a copy), our actual "m·ximun safe size" is two thirds of that, mean, 32GB x 4 = 128GB. With that on mind, we should not create anything larger than this safe limit. In any case, we'll just create a single 64GB volume inside the pool with the following command:
+Our CEPH cluster size (total) is 32GB x 6 = 192GB, but, because our replica factor is 2 (the object and a copy), our actual "m√°ximun safe size" is two thirds of that, mean, 32GB x 4 = 128GB. With that on mind, we should not create anything larger than this safe limit. In any case, we'll just create a single 64GB volume inside the pool with the following command:
 
 ```bash
 rbd --pool owncloud create --size 64G owncloud-rbd-01
@@ -983,7 +984,7 @@ Logout, and log-back in to start using your owncloud installation backed by CEPH
 Note something here. The extra object-backed storaged will be added as an "extra folder" that can share contents among all (or specific) users in Owncloud, but, it won't be the primary backing storage. In order to use CEPH-S3 as "primary backing storage", you need the "enterprise" owncloud version.
 
 
-### What if I want redundancy or load-balancing ?
+### What if I want redundancy or load-balancing in Owncloud ?
 
 If, you want just redundancy (active/stand-by), you can use cluster solutions like pacemaker/corosync in order to have two owncloud servers sharing a VIP (virtual IP) and mounting the RBD device in the active node. That's already covered on some of my recipes. Just ensure the RBD device is mapped to all servers needing it, but, ensure also only one server will use it at the time, our you'll risk data corruption.
 
@@ -991,4 +992,332 @@ Now, if you want multiple servers running at the same time and load-balance them
 
 - Use the owncloud enterprise version with CEPH-S3 as primary backing storage.
 - Use the community version, but, instead of formating the RBD device with xfs, use a cluster-aware filesystem like GFS or OCFS. Also, remember to disable RBD caching as this is not compatible with the use of either GFS or OCFS. More information [here](http://docs.ceph.com/docs/master/rbd/rbd-config-ref/).
+
+
+### Extending the LAB: Using NEXTCLOUD instead of OWNCLOUD.
+
+Lets asume that you want to get rid of owncloud and use nextcloud instead. Note that the following steps will force the removal of Owncloud.
+
+First, let's create a database for our nextcloud installation:
+
+```bash
+mysql -e "CREATE DATABASE nextcloud;"
+mysql -e "grant all on nextcloud.* to 'nextclouduser'@'localhost' identified by 'P@ssw0rd';"
+mysql -e "FLUSH PRIVILEGES;"
+```
+
+Download the lattest 11 release and unzip it to apache main web dir:
+
+```bash
+mkdir /workdir
+cd /workdir
+wget https://download.nextcloud.com/server/releases/latest-11.zip
+unzip /workdir/latest-11.zip -d /var/www/html/
+```
+
+Now, and because nextcloud requires php from 5.6 and centos 7 php version is 5.4, we need to update our php version. Note that, this will KILL our owncloud install:
+
+```bash
+yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+yum update --skip-broken
+yum -y erase php-common
+yum -y install mod_php71w php71w php71w-opcache \
+php71w-pear php71w-pdo php71w-xml php71w-pdo_dblib \
+php71w-mbstring php71w-mysql php71w-mcrypt php71w-fpm \
+php71w-bcmath php71w-gd php71w-cli php71w-zip php71w-dom \
+php71w-pecl-memcached php71w-pecl-redis
+```
+
+Your old owncloud config will be located at "/etc/owncloud/config.php.rpmsave".
+
+Set some extra PHP configs:
+
+```bash
+crudini --set /etc/php.ini PHP upload_max_filesize 100M
+crudini --set /etc/php.ini PHP post_max_size 100M
+```
+
+Modify the file "/var/www/html/index.html". New contents:
+
+```html
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="refresh" CONTENT="0;URL=/nextcloud">
+</HEAD>
+<BODY>
+</BODY>
+</HTML>
+```
+
+Get rid of last owncloud dependencies:
+
+```bash
+rm -f /etc/httpd/conf.d/z-owncloud-access.conf
+rm -rf /etc/owncloud
+rm -rf /mnt/owncloud-data/data
+mysql -e "DROP DATABASE owncloud;"
+```
+
+Create a directory inside our RBD mount point:
+
+```bash
+mkdir /mnt/owncloud-data/data
+```
+
+Set the following permissions:
+
+```bash
+chown -R apache.apache /var/www/html/nextcloud /mnt/owncloud-data/data
+```
+
+Restart apache:
+
+```bash
+systemctl restart httpd
+```
+
+Next step: Enter with a browser to our nextcloud directory and set database info and data dir:
+
+- http://192.168.56.70/nextcloud
+
+Complete the following information:
+
+- User: admin
+- Password: P@ssw0rd
+- Data dir: /mnt/owncloud-data/data
+- Database type: mysql/mariadb
+- DB Name: nextcloud
+- DB User: nextclouduser
+- DB User password: P@ssw0rd
+- DB Host: localhost:3306
+
+Then click on "complete the installation". Your installation will begin to use the RBD mount in "/mnt/owncloud-data".
+
+
+### Setting NEXTCLOUD primary storage to CEPH-S3 native object storage.
+
+Using RBD is OK but, what if you want to use a CEPH-S3 bucket as primary storage instead of the data dir at /mnt/owncloud-data/data ?. This is one of the main differences between Nextcloud and Owncloud. In owncloud, only te enterprise offering can use CEPH/AWS S3 as primary backend. In next cloud, you can use CEPH/AWS S3 right out of the box !.
+
+Let's proceed to create a CEPH-S3 bucket for our nextcloud installation. First, our user:
+
+```bash
+radosgw-admin user create --uid="nextclouds3" --display-name="Nextcloud S3 User"
+radosgw-admin quota set --quota-scope=user --uid="nextclouds3" --max-objects=-1 --max-size=64G
+```
+
+And get the auth info:
+
+```bash
+[root@server-70 data]# radosgw-admin user info --uid=nextclouds3
+{
+    "user_id": "nextclouds3",
+    "display_name": "Nextcloud S3 User",
+    "email": "",
+    "suspended": 0,
+    "max_buckets": 1000,
+    "auid": 0,
+    "subusers": [],
+    "keys": [
+        {
+            "user": "nextclouds3",
+            "access_key": "X2UYM65Q9Y52EJGBYGBN",
+            "secret_key": "tdJnpQUMU1xY9V58ZC35YQ4SrXYyrFODwkskmiP6"
+        }
+    ],
+    "swift_keys": [],
+    "caps": [],
+    "op_mask": "read, write, delete",
+    "default_placement": "",
+    "placement_tags": [],
+    "bucket_quota": {
+        "enabled": false,
+        "max_size_kb": -1,
+        "max_objects": -1
+    },
+    "user_quota": {
+        "enabled": false,
+        "max_size_kb": 67108864,
+        "max_objects": -1
+    },
+    "temp_url_keys": []
+}
+```
+
+Our access key is "X2UYM65Q9Y52EJGBYGBN" and our secret "tdJnpQUMU1xY9V58ZC35YQ4SrXYyrFODwkskmiP6".
+
+Now, in order to get our installation to use CEPH-S3, we need to modify the file "/var/www/html/nextcloud/config/config.php" and include the following section:
+
+```bash
+  'objectstore' => array (
+        'class' => 'OC\\Files\\ObjectStore\\S3',
+        'arguments' => array (
+                'bucket' => 'nextcloud',
+                'autocreate' => true,
+                'key'    => 'X2UYM65Q9Y52EJGBYGBN',
+                'secret' => 'tdJnpQUMU1xY9V58ZC35YQ4SrXYyrFODwkskmiP6',
+                'hostname' => '192.168.56.72',
+                'port' => 7480,
+                'use_ssl' => false,
+                'region' => 'optional',
+                // required for some non amazon s3 implementations
+                'use_path_style'=>true
+        ),
+  ),
+```
+
+Our new config file will be set to:
+
+```bash
+<?php
+$CONFIG = array (
+  'instanceid' => 'oclxrn65asbl',
+  'passwordsalt' => 'rMZe6RWrIgHSyfxIy1kcjd0Tg4sZVx',
+  'secret' => 'CvK5CCiL+tMU9rX/FeVtL3b4IXdhOCnp/MglZJx+XPbqui9x',
+  'trusted_domains' =>
+  array (
+    0 => '192.168.56.70',
+  ),
+  'datadirectory' => '/mnt/owncloud-data/data',
+  'objectstore' => array (
+        'class' => 'OC\\Files\\ObjectStore\\S3',
+        'arguments' => array (
+                'bucket' => 'nextcloud',
+                'autocreate' => true,
+                'key'    => 'X2UYM65Q9Y52EJGBYGBN',
+                'secret' => 'tdJnpQUMU1xY9V58ZC35YQ4SrXYyrFODwkskmiP6',
+                'hostname' => '192.168.56.72',
+                'port' => 7480,
+                'use_ssl' => false,
+                'region' => 'optional',
+                // required for some non amazon s3 implementations
+                'use_path_style'=>true
+        ),
+  ),
+  'overwrite.cli.url' => 'http://192.168.56.70/nextcloud',
+  'dbtype' => 'mysql',
+  'version' => '11.0.3.2',
+  'dbname' => 'nextcloud',
+  'dbhost' => 'localhost:3306',
+  'dbport' => '',
+  'dbtableprefix' => 'oc_',
+  'dbuser' => 'nextclouduser',
+  'dbpassword' => 'P@ssw0rd',
+  'logtimezone' => 'UTC',
+  'installed' => true,
+);
+```
+
+Then, restart apache:
+
+```bash
+systemctl restart httpd
+```
+
+Also, proceed to add the following config to the owncloud configuration file "/var/www/html/nextcloud/config/config.php":
+
+```bash
+  'memcache.local' => '\OC\Memcache\Redis',
+  'memcache.locking' => '\OC\Memcache\Redis',
+  'redis' =>
+  array (
+    'host' => 'localhost',
+    'port' => 6379,
+  ),
+```
+
+Then (again) restart apache:
+
+```bash
+systemctl restart httpd
+```
+
+Our final config:
+
+```bash
+<?php
+$CONFIG = array (
+  'instanceid' => 'oclxrn65asbl',
+  'passwordsalt' => 'rMZe6RWrIgHSyfxIy1kcjd0Tg4sZVx',
+  'secret' => 'CvK5CCiL+tMU9rX/FeVtL3b4IXdhOCnp/MglZJx+XPbqui9x',
+  'trusted_domains' =>
+  array (
+    0 => '192.168.56.70',
+  ),
+  'datadirectory' => '/mnt/owncloud-data/data',
+  'objectstore' => array (
+        'class' => 'OC\\Files\\ObjectStore\\S3',
+        'arguments' => array (
+                'bucket' => 'nextcloud',
+                'autocreate' => true,
+                'key'    => 'X2UYM65Q9Y52EJGBYGBN',
+                'secret' => 'tdJnpQUMU1xY9V58ZC35YQ4SrXYyrFODwkskmiP6',
+                'hostname' => '192.168.56.72',
+                'port' => 7480,
+                'use_ssl' => false,
+                'region' => 'optional',
+                // required for some non amazon s3 implementations
+                'use_path_style'=>true
+        ),
+  ),
+  'memcache.local' => '\OC\Memcache\Redis',
+  'memcache.locking' => '\OC\Memcache\Redis',
+  'redis' =>
+  array (
+    'host' => 'localhost',
+    'port' => 6379,
+  ),
+  'overwrite.cli.url' => 'http://192.168.56.70/nextcloud',
+  'dbtype' => 'mysql',
+  'version' => '11.0.3.2',
+  'dbname' => 'nextcloud',
+  'dbhost' => 'localhost:3306',
+  'dbport' => '',
+  'dbtableprefix' => 'oc_',
+  'dbuser' => 'nextclouduser',
+  'dbpassword' => 'P@ssw0rd',
+  'logtimezone' => 'UTC',
+  'installed' => true,
+);
+```
+
+Now, all your user files will be stored using CEPH-S3. That, apart of being more "native" for nextcloud, will ease your multi-server/load-balanced nextcloud deployments!.
+
+We can check the bucket statistics using radosgw-admin command tool:
+
+```bash
+[root@server-70 /]# radosgw-admin bucket stats --bucket=nextcloud
+{
+    "bucket": "nextcloud",
+    "pool": "default.rgw.buckets.data",
+    "index_pool": "default.rgw.buckets.index",
+    "id": "3720f2c0-132c-4c49-8dbb-17ad3cc6c9ad.94107.1",
+    "marker": "3720f2c0-132c-4c49-8dbb-17ad3cc6c9ad.94107.1",
+    "owner": "nextclouds3",
+    "ver": "0#181",
+    "master_ver": "0#0",
+    "mtime": "2017-05-29 21:11:14.415720",
+    "max_marker": "0#",
+    "usage": {
+        "rgw.main": {
+            "size_kb": 116890,
+            "size_kb_actual": 117004,
+            "num_objects": 46
+        }
+    },
+    "bucket_quota": {
+        "enabled": false,
+        "max_size_kb": -1,
+        "max_objects": -1
+    }
+}
+```
+
+And if you want to list all objects in the bucket, use the command:
+
+```bash
+radosgw-admin bucket list --bucket=nextcloud
+```
+
+END.-
+
 
