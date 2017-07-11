@@ -1,4 +1,14 @@
-# NEXTCLOUD WITH MINIO (S3 MODE) PRIMARY STORAGE BACKEND - CENTOS7.
+# [NEXTCLOUD WITH MINIO (S3 MODE) PRIMARY STORAGE BACKEND - CENTOS7.](http://tigerlinux.github.io)
+
+
+- **By Reinaldo Martínez P.**
+- **Caracas, Venezuela.**
+- **TigerLinux AT gmail DOT com**
+- **[My Google Plus Site](https://plus.google.com/+ReinaldoMartinez)**
+- **[My Github Site](https://github.com/tigerlinux)**
+- **[My Linkedin Profile - English](https://ve.linkedin.com/in/tigerlinux/en)**
+- **[My Linkedin Profile - Spanish](https://ve.linkedin.com/in/tigerlinux/es)**
+
 
 
 ## What is our goal here ?:
