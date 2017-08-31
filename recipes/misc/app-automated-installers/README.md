@@ -35,4 +35,6 @@ All our scripts are shorter than 16K and completely automated/unattended. This i
 
 Practically all our Centos7 based scripts install EPEL-7 repository. This is also a requirement for us. We firmly believe that a Centos machine without EPEL is incomplete !. Also, some of our applications require packages from EPEL repos.
 
+**NOTE:** This work is replicated as a part of a greater community effort with "Onbrella Team": [https://github.com/onbrella/app-installers](https://github.com/onbrella/app-installers)
+
 END.-
