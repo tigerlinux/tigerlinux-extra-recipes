@@ -1,4 +1,12 @@
-# AUTOMATED INSTALLATION SCRIPTS FOR GENERAL APPLICATIONS.
+# [AUTOMATED INSTALLATION SCRIPTS FOR GENERAL APPLICATIONS.](http://tigerlinux.github.io)
+
+- **By Reinaldo Martínez P.**
+- **Caracas, Venezuela.**
+- **TigerLinux AT gmail DOT com**
+- **[My Google Plus Site](https://plus.google.com/+ReinaldoMartinez)**
+- **[My Github Site](https://github.com/tigerlinux)**
+- **[My Linkedin Profile - English](https://ve.linkedin.com/in/tigerlinux/en)**
+- **[My Linkedin Profile - Spanish](https://ve.linkedin.com/in/tigerlinux/es)**
 
 This repository contains several scripts that can be used on any cloud-init based environment (aws, openstack, digital ocean, packet.net, etc.) or that can be run manually in any server that meets the minimun requirements for each script.
 
