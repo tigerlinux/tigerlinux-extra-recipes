@@ -284,6 +284,15 @@ systemctl status docker-mariadb-server --no-pager
 sync
 sleep 10
 #
+systemctl enable rc-local >/dev/null 2>&1
+systemctl enable rc.local >/dev/null 2>&1
+chmod 755 /etc/rc.d/rc.local >/dev/null 2>&1
+chmod 755 /etc/rc.local >/dev/null 2>&1
+
+echo "`which systemctl` restart docker-mariadb-server.service" >> /etc/rc.local
+sed -r -i 's/exit\ 0//g' /etc/rc.local
+sed -r -i "s/\#\!\/bin\/sh.*/\#\!\/bin\/bash/g" /etc/rc.local
+sed -r -i "s/\#\!\/bin\/bash.*/\#\!\/bin\/bash/g" /etc/rc.local
 
 if [ `docker ps|grep -c mariadb-engine-docker` == "1" ]
 then
