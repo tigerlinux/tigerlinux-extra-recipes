@@ -4,16 +4,16 @@
 # tigerlinux@gmail.com
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
-# ELK Stack Server Setup for Centos 7 64 bits
-# (ELK = ElasticSearch, Logstack, Kibana)
-# Release 1.1
+# WAZUH Server Setup for Centos 7 64 bits
+# (Includes ELK Server Stack)
+# Release 1.0
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 
-lgfile="/var/log/elk-stack-automated-install.log"
+export lgfile="/var/log/wazuh-server-automated-install.log"
 echo "Start Date/Time: `date`" &>>$lgfile
-credentialsfile="/root/elk-stack-credentials.txt"
+export credentialsfile="/root/wazuh-server-credentials.txt"
 export OSFlavor='unknown'
 # Set your java preference... either OpenJDK or Oracle JDK
 # The next variable should be set to:
@@ -45,6 +45,7 @@ then
 fi
 
 export kibanaadminpass=`openssl rand -hex 10`
+export wazuhapipass=`openssl rand -hex 10`
 
 cpus=`lscpu -a --extended|grep -ic yes`
 instram=`free -m -t|grep -i mem:|awk '{print $2}'`
@@ -53,7 +54,7 @@ avvar=`df -k --output=avail /var|tail -n 1`
 
 if [ $cpus -lt "2" ] || [ $instram -lt "3500" ] || [ $avusr -lt "5000000" ] || [ $avvar -lt "5000000" ]
 then
-	echo "Not enough hardware for ELK Stack. Aborting!" &>>$lgfile
+	echo "Not enough hardware for Wazuh. Aborting!" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
@@ -131,6 +132,16 @@ autorefresh=1
 type=rpm-md
 EOF
 
+cat<<EOF>/etc/yum.repos.d/wazuh.repo
+[wazuh_repo]
+gpgcheck=1
+gpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH
+enabled=1
+name=CentOS-\$releasever - Wazuh
+baseurl=https://packages.wazuh.com/yum/el/\$releasever/\$basearch
+protect=1
+EOF
+
 yum -y update --exclude=kernel*
 
 yum -y install elasticsearch
@@ -154,9 +165,15 @@ yum -y install nginx httpd-tools
 htpasswd -b -c /etc/nginx/htpasswd.users admin $kibanaadminpass
 
 echo "Your KIBANA Credentials are:" >> $credentialsfile
-echo "User: admin" >> $credentialsfile
-echo "Password: $kibanaadminpass" >> $credentialsfile
-echo "URL: http://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
+echo "- User: admin" >> $credentialsfile
+echo "- Password: $kibanaadminpass" >> $credentialsfile
+echo "- URL: http://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
+echo "Wazuh API Credentials:" >> $credentialsfile
+echo "- API User: wazuhapiadm" >> $credentialsfile
+echo "- API User Password: $wazuhapipass" >> $credentialsfile
+echo "- FULL URL: http://`ip route get 1 | awk '{print $NF;exit}'`:55000" >> $credentialsfile
+echo "- Base URL for Kibana Config on \"WAZUH API ADD\" section: http://127.0.0.1" >> $credentialsfile
+echo "- Port for Kibana Config on \"WAZUH API ADD\" section: 55000" >> $credentialsfile
 
 cat /etc/nginx/nginx.conf >> /etc/nginx/nginx.conf.original
 
@@ -229,16 +246,40 @@ cp /etc/pki/CA-ELK/ca.crt /etc/pki/ca-trust/source/anchors/
 cd /
 update-ca-trust
 
+curl -so /etc/logstash/wazuh-elastic5-template.json https://raw.githubusercontent.com/wazuh/wazuh/2.0/extensions/elasticsearch/wazuh-elastic5-template.json
 
-cat<<EOF >/etc/logstash/conf.d/02-beats-input.conf
+
+cat<<EOF >/etc/logstash/conf.d/01-wazuh.conf
 input {
  beats {
   port => 5044
+  codec => "json_lines"
   ssl => true
   ssl_certificate_authorities => "/etc/pki/CA-ELK/ca.crt"
   ssl_certificate => "/etc/pki/CA-ELK/server.pem"
   ssl_key => "/etc/pki/CA-ELK/server.key"
   ssl_verify_mode => "none"
+ }
+}
+input {
+ file {
+  type => "wazuh-alerts"
+  path => "/var/ossec/logs/alerts/alerts.json"
+  codec => "json"
+ }
+}
+filter {
+ geoip {
+  source => "srcip"
+  target => "GeoLocation"
+  fields => ["city_name", "continent_code", "country_code2", "country_name", "region_name", "location"]
+ }
+ date {
+  match => ["timestamp", "ISO8601"]
+  target => "@timestamp"
+ }
+ mutate {
+  remove_field => [ "timestamp", "beat", "fields", "input_type", "tags", "count", "@version", "log", "offset", "type"]
  }
 }
 EOF
@@ -265,8 +306,10 @@ output {
     hosts => ["127.0.0.1:9200"]
     sniffing => true
     manage_template => false
-    index => "%{[@metadata][beat]}-%{+YYYY.MM.dd}"
-    document_type => "%{[@metadata][type]}"
+    index => "wazuh-alerts-%{+YYYY.MM.dd}"
+    document_type => "wazuh"
+    template => "/etc/logstash/wazuh-elastic5-template.json"
+    template_overwrite => true
   }
 }
 EOF
@@ -275,43 +318,96 @@ EOF
 echo "Validating logstash config" &>>$lgfile
 /usr/share/logstash/bin/logstash --config.test_and_exit -f /etc/logstash/conf.d/ &>>$lgfile
 
+systemctl daemon-reload
+
 systemctl restart logstash
 systemctl enable logstash
 sleep 60
 sync
 
+yum -y install wazuh-manager
+systemctl enable wazuh-manager
+systemctl restart wazuh-manager
+
+usermod -a -G ossec logstash
+
+curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -
+
+yum -y install nodejs
+
+yum -y install python2 wazuh-api
+
+systemctl enable wazuh-api
+systemctl restart wazuh-api
+
+echo "Installing WAZUHAPP Plugin. This will take several minutes to finish. Please wait" &>>$lgfile
+/usr/share/kibana/bin/kibana-plugin install https://packages.wazuh.com/wazuhapp/wazuhapp.zip &>>$lgfile
+
+cd /
+
+cd /var/ossec/api/configuration/auth/
+node htpasswd -b -c /var/ossec/api/configuration/auth/user wazuhapiadm $wazuhapipass
+cd /
+
+systemctl restart wazuh-api
+systemctl enable wazuh-api
+
+systemctl restart kibana
+
+sleep 30
+
 yum -y install filebeat
 
 cat<<EOF >/etc/filebeat/filebeat.yml
-filebeat.prospectors:
-- input_type: log
-  paths:
-    - /var/log/secure
-    - /var/log/messages
-    - /var/log/*.log
+filebeat:
+ prospectors:
+  - input_type: log
+    paths:
+     - "/var/ossec/logs/alerts/alerts.json"
+    document_type: json
+    json.message_key: log
+    json.keys_under_root: true
+    json.overwrite_keys: true
 output.logstash:
-  hosts: ["127.0.0.1:5044"]
-  ssl.certificate_authorities: ["/etc/pki/CA-ELK/ca.crt"]
-  ssl.certificate: "/etc/pki/CA-ELK/client1.pem"
-  ssl.key: "/etc/pki/CA-ELK/client1.key"
+ hosts: ["127.0.0.1:5044"]
+ ssl.certificate_authorities: ["/etc/pki/CA-ELK/ca.crt"]
+ ssl.certificate: "/etc/pki/CA-ELK/client1.pem"
+ ssl.key: "/etc/pki/CA-ELK/client1.key"
 EOF
 
-systemctl start filebeat
+systemctl daemon-reload
+systemctl restart filebeat
 systemctl enable filebeat
+
+curl \
+https://raw.githubusercontent.com/wazuh/wazuh-kibana-app/master/server/startup/integration_files/template_file.json \
+| \
+curl \
+-XPUT \
+'http://localhost:9200/_template/wazuh' \
+-H 'Content-Type: application/json' -d @-
+
+curl \
+https://raw.githubusercontent.com/wazuh/wazuh-kibana-app/master/server/startup/integration_files/alert_sample.json \
+| \
+curl -XPUT "http://localhost:9200/wazuh-alerts-"`date +%Y.%m.%d`"/wazuh/sample" \
+-H 'Content-Type: application/json' -d @-
 
 systemctl status elasticsearch &>>$lgfile
 systemctl status kibana &>>$lgfile
 systemctl status nginx &>>$lgfile
 systemctl status logstash &>>$lgfile
 systemctl status filebeat &>>$lgfile
+systemctl status wazuh-manager &>>$lgfile
+systemctl status wazuh-api &>>$lgfile
 
 
-if [ `ss -ltn|grep -c :80` -gt "0" ] && [ `ss -ltn|grep -c :9200` -gt "0" ] && [ `ss -ltn|grep -c :5044` -gt "0" ]
+if [ `ss -ltn|grep -c :80` -gt "0" ] && [ `ss -ltn|grep -c :9200` -gt "0" ] && [ `ss -ltn|grep -c :5044` -gt "0" ] && [ `ss -ltn|grep -c :55000` -gt "0" ]
 then
-	echo "Your ELK Stack server is ready. See your credentials at $credentialsfile" &>>$lgfile
+	echo "Your WAZUH Server is ready. See your credentials at $credentialsfile" &>>$lgfile
 	cat $credentialsfile &>>$lgfile
 else
-	echo "ELK Stack Server install failed" &>>$lgfile
+	echo "WAZUH Server install failed" &>>$lgfile
 fi
 
 echo "End Date/Time: `date`" &>>$lgfile
