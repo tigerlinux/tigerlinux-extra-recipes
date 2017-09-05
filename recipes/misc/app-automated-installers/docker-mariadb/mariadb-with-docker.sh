@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # Dockerized MariaDB Installation Script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.1
+# Release 1.2
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -14,10 +14,12 @@ PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 lgfile="/var/log/mariadb-dockerizerd-install.log"
 echo "Start Date/Time: `date`" &>>$lgfile
 export OSFlavor='unknown'
+# Install phpmyadmin - yes or no
+phpmyadmin="yes"
 
 if [ -f /etc/centos-release ]
 then
-	OSFlavor='centos-based'
+	export OSFlavor='centos-based'
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which lvm2 sudo hostname
 	setenforce 0
@@ -28,7 +30,7 @@ fi
 
 if [ -f /etc/debian_version ]
 then
-	OSFlavor='debian-based'
+	export OSFlavor='debian-based'
 	apt-get -y clean
 	apt-get -y update
 
@@ -224,12 +226,15 @@ docker run --name mariadb-engine-docker \
 -p $mariadbip:$mariadbport:3306 \
 -d mariadb:10.1
 #
-# a safe 20 seconds stabilization wait.
-sleep 20
+# a safe 60 seconds stabilization wait.
+sleep 60
+sync
 #
 # Let's stop the mariadb docker:
 docker ps -a
 docker stop mariadb-engine-docker
+sleep 30
+sync
 #
 # Now, we'll reconfigure mariadb, this time, using the socket file
 #
@@ -293,6 +298,118 @@ echo "`which systemctl` restart docker-mariadb-server.service" >> /etc/rc.local
 sed -r -i 's/exit\ 0//g' /etc/rc.local
 sed -r -i "s/\#\!\/bin\/sh.*/\#\!\/bin\/bash/g" /etc/rc.local
 sed -r -i "s/\#\!\/bin\/bash.*/\#\!\/bin\/bash/g" /etc/rc.local
+
+if [ $phpmyadmin == "yes" ] && [ $OSFlavor == "centos-based" ]
+then
+	yum -y install phpMyAdmin httpd php php-common mod_php php-pear php-opcache \
+	php-pdo php-mbstring php-xml php-bcmath php-json php-cli php-gd php-cli
+	
+	sed -r -i 's/Require\ ip\ 127.0.0.1/Require\ all\ granted/g' /etc/httpd/conf.d/phpMyAdmin.conf
+
+	crudini --set /etc/php.ini PHP upload_max_filesize 100M
+	crudini --set /etc/php.ini PHP post_max_size 100M
+	crudini --set /etc/php.ini PHP memory_limit 256M
+	
+	mytimezone=`timedatectl status|grep -i "time zone:"|cut -d: -f2|awk '{print $1}'`
+
+	if [ -f /usr/share/zoneinfo/$mytimezone ]
+	then
+		crudini --set /etc/php.ini PHP date.timezone "$mytimezone"
+	else
+		crudini --set /etc/php.ini PHP date.timezone "UTC"
+	fi
+	
+	systemctl enable httpd
+	systemctl start httpd
+	cat <<EOF >/var/www/html/index.html
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="refresh" CONTENT="0;URL=/phpMyAdmin">
+</HEAD>
+<BODY>
+</BODY>
+</HTML>
+EOF
+	echo "PHPMYADMINURL: http://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
+fi
+
+if [ $phpmyadmin == "yes" ] && [ $OSFlavor == "debian-based" ]
+then
+	export DEBIAN_FRONTEND=noninteractive
+	apt-get -y install phpmyadmin php-mbstring php-gettext apache2
+	
+	ln -s /etc/php/7.0/apache2/php.ini /etc/php.ini
+	
+	crudini --set /etc/php.ini PHP upload_max_filesize 100M
+	crudini --set /etc/php.ini PHP post_max_size 100M
+	crudini --set /etc/php.ini PHP memory_limit 256M
+	
+	mytimezone=`timedatectl status|grep -i "time zone:"|cut -d: -f2|awk '{print $1}'`
+	
+	if [ -f /usr/share/zoneinfo/$mytimezone ]
+	then
+		crudini --set /etc/php.ini PHP date.timezone "$mytimezone"
+	else
+		crudini --set /etc/php.ini PHP date.timezone "UTC"
+	fi
+	
+	phpenmod mcrypt
+	phpenmod mbstring
+	cp /etc/phpmyadmin/apache.conf /etc/apache2/conf-available/phpmyadmin.conf
+	a2enconf phpmyadmin.conf
+	
+	> /etc/phpmyadmin/config-db.php
+	> /etc/dbconfig-common/phpmyadmin.conf
+	
+	export phpmyadminpass=`openssl rand -hex 10`
+	
+	cat<<EOF >/root/os-db.sql
+CREATE DATABASE IF NOT EXISTS phpmyadmin default character set utf8;
+GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'%' IDENTIFIED BY '$phpmyadminpass';
+GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'127.0.0.1' IDENTIFIED BY '$phpmyadminpass';
+GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'localhost' IDENTIFIED BY '$phpmyadminpass';
+FLUSH PRIVILEGES;
+EOF
+
+	mysql < /root/os-db.sql
+	mysql -u root -h 127.0.0.1 -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` < /root/os-db.sql
+	mysql -u root -h localhost -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` < /root/os-db.sql
+	mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep password /root/.my.cnf |cut -d\" -f2` < /root/os-db.sql
+
+	mysql -u root -h 127.0.0.1 -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` < /usr/share/phpmyadmin/sql/create_tables.sql
+	mysql -u root -h localhost -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` < /usr/share/phpmyadmin/sql/create_tables.sql
+	mysql < /usr/share/phpmyadmin/sql/create_tables.sql
+	mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep password /root/.my.cnf |cut -d\" -f2` < /usr/share/phpmyadmin/sql/create_tables.sql
+	
+	cat <<EOF>/etc/phpmyadmin/config-db.php
+<?php
+\$dbuser='phpmyadminuser';
+\$dbpass='$phpmyadminpass';
+\$basepath='';
+\$dbname='phpmyadmin';
+\$dbserver='127.0.0.1';
+\$dbport='3306';
+\$dbtype='mysql';
+EOF
+	
+	cat <<EOF >/var/www/html/index.html
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="refresh" CONTENT="0;URL=/phpmyadmin">
+</HEAD>
+<BODY>
+</BODY>
+</HTML>
+EOF
+
+	systemctl restart apache2
+	systemctl enable apache2
+	
+	echo "PHPMYADMINURL: http://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
+	
+	rm -f /root/os-db.sql
+
+fi
 
 if [ `docker ps|grep -c mariadb-engine-docker` == "1" ]
 then

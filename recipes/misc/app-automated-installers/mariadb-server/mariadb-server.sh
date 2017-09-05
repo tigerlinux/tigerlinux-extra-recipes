@@ -5,9 +5,9 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # MariaDB Server Automated Installation Script
-# Rel 1.1
+# Rel 1.2
 # For usage on centos7 64 bits machines.
-#
+# (includes phpmyadmin installation as an option)
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 OSFlavor='unknown'
@@ -15,6 +15,8 @@ lgfile="/var/log/mariadbserver-automated-installer.log"
 credentialsfile="/root/mariabd-access-info.txt"
 echo "Start Date/Time: `date`" &>>$lgfile
 debug="no"
+# Install phpmyadmin - yes or no
+phpmyadmin="yes"
 
 if [ -f /etc/centos-release ]
 then
@@ -201,6 +203,40 @@ rm -f /root/os-db.sql
 echo "MariaDB User: root" > $credentialsfile
 echo "MariaDB root password: $mariadbpass" >> $credentialsfile
 echo "MariaDB listen IP: $mariadbip" >> $credentialsfile
+
+if [ $phpmyadmin == "yes" ]
+then
+	yum -y install phpMyAdmin httpd php php-common mod_php php-pear php-opcache \
+	php-pdo php-mbstring php-xml php-bcmath php-json php-cli php-gd php-cli
+	
+	sed -r -i 's/Require\ ip\ 127.0.0.1/Require\ all\ granted/g' /etc/httpd/conf.d/phpMyAdmin.conf
+
+	crudini --set /etc/php.ini PHP upload_max_filesize 100M
+	crudini --set /etc/php.ini PHP post_max_size 100M
+	crudini --set /etc/php.ini PHP memory_limit 256M
+	
+	mytimezone=`timedatectl status|grep -i "time zone:"|cut -d: -f2|awk '{print $1}'`
+
+	if [ -f /usr/share/zoneinfo/$mytimezone ]
+	then
+		crudini --set /etc/php.ini PHP date.timezone "$mytimezone"
+	else
+		crudini --set /etc/php.ini PHP date.timezone "UTC"
+	fi
+	
+	systemctl enable httpd
+	systemctl start httpd
+	cat <<EOF >/var/www/html/index.html
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="refresh" CONTENT="0;URL=/phpMyAdmin">
+</HEAD>
+<BODY>
+</BODY>
+</HTML>
+EOF
+	echo "PHPMYADMINURL: http://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
+fi
 
 if [ `mysqladmin -h localhost -u root -p$mariadbpass ping|grep -ci alive` == "1" ]
 then

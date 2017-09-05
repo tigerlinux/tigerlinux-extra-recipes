@@ -22,6 +22,11 @@ systemctl stop docker-mariadb-server
 systemctl status docker-mariadb-server
 ```
 
+# PHPMYADMIN
+
+PHPMyAdmin is included as an option controlled by the variable "phpmyadmin" at the begining of the script. By default, is set to "yes" (phpmyadmin and required dependencies will be installed). Setting this to "no" or any other value different to "yes" will make the script to not install phpmyadmin.
+
+
 # GENERAL REQUIREMENTS:
 
 This script will fail if the following requirements are not meet:

@@ -10,6 +10,11 @@ Most of the tasks performed by this script will be logged to the file "/var/log/
 
 Please note that this script will disable both firewalld and selinux. If you want you can install them back after this script finish its run.
 
+# PHPMYADMIN
+
+PHPMyAdmin is included as an option controlled by the variable "phpmyadmin" at the begining of the script. By default, is set to "yes" (phpmyadmin and required dependencies will be installed). Setting this to "no" or any other value different to "yes" will make the script to not install phpmyadmin.
+
+
 # GENERAL REQUIREMENTS:
 
 This script will fail if the following requirements are not meet:
