@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # MariaDB Server Automated Installation Script
-# Rel 1.2
+# Rel 1.3
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -67,7 +67,12 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y erase firewalld
+yum -y install firewalld
+systemctl enable firewalld
+systemctl restart firewalld
+firewall-cmd --zone=public --add-service=mysql --permanent
+firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --reload
 
 if [ `grep -c swapfile /etc/fstab` == "0" ]
 then
@@ -140,14 +145,25 @@ systemctl --system daemon-reload
 systemctl enable mariadb.service
 systemctl start mariadb.service
 
-devicelist=`lsblk -do NAME|grep -v NAME`
+cloudconfigdrive=`grep cloudconfig /etc/fstab |grep -v swap|awk '{print $1}'`
+if [ $cloudconfigdrive ]
+then
+	umount $cloudconfigdrive
+	cat /etc/fstab > /etc/fstab.backup-original
+	cat /etc/fstab|egrep -v $cloudconfigdrive > /etc/fstab.pre-cloudconfigdrive
+	cat /etc/fstab.pre-cloudconfigdrive > /etc/fstab
+fi
+
+devicelist=`lsblk -do NAME,TYPE -nl -e1,2,11|grep disk|grep -v drbd|awk '{print $1}'`
 
 nxsto=''
 for blkst in $devicelist
 do
 	if [ `lsblk -do NAME,TYPE|grep -v NAME|grep disk|awk '{print $1}'|grep -v da|grep -c ^$blkst` == "1" ] \
 	&& [ `blkid |grep $blkst|grep -ci swap` == 0 ] \
-	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ]
+	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ] \
+	&& [ `pvdisplay|grep -ci /dev/$blkst` == 0 ] \
+	&& [ `df -h|grep -ci ^/dev/$blkst` == 0 ]
 	then
 		echo "Device $blkst usable" &>>$lgfile
 		nxsto=$blkst
@@ -207,7 +223,25 @@ echo "MariaDB listen IP: $mariadbip" >> $credentialsfile
 if [ $phpmyadmin == "yes" ]
 then
 	yum -y install phpMyAdmin httpd php php-common mod_php php-pear php-opcache \
-	php-pdo php-mbstring php-xml php-bcmath php-json php-cli php-gd php-cli
+	php-pdo php-mbstring php-xml php-bcmath php-json php-cli php-gd php-cli \
+	mod_evasive mod_ssl
+
+	cat <<EOF >/etc/httpd/conf.d/extra-security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
+<FilesMatch "^(xmlrpc\.php|wp-trackback\.php)">
+Order Deny,Allow
+Deny from all
+</FilesMatch>
+EOF
+
+	sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
+	sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
+	sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
 	
 	sed -r -i 's/Require\ ip\ 127.0.0.1/Require\ all\ granted/g' /etc/httpd/conf.d/phpMyAdmin.conf
 
@@ -236,6 +270,9 @@ then
 </HTML>
 EOF
 	echo "PHPMYADMINURL: http://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
+	firewall-cmd --zone=public --add-service=http --permanent
+	firewall-cmd --zone=public --add-service=https --permanent
+	firewall-cmd --reload
 fi
 
 if [ `mysqladmin -h localhost -u root -p$mariadbpass ping|grep -ci alive` == "1" ]

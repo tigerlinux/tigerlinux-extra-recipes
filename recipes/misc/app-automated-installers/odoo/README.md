@@ -4,7 +4,21 @@ This script will do a basic distribution setup with some usefull packages, then 
 
 After the installer ends, you can enter to your web server with any browser and create your first odoo database.
 
-Please note that this script will disable both firewalld and selinux. If you want you can install them back after this script finish its run.
+Please note that this script will disable selinux.
+
+
+# LETSENCRYPT
+
+This script will install "certbot" (letsencrypt software) and set the required crontab for automated renewall. The "ssl" certificate created by this script is "self-signed". Use "certbot" to adquire a valid certificate from letsencrypt.
+
+
+# OPENED PORTS
+
+FirewallD allow traffic for the following ports only (input traffic):
+
+- 80 tcp (http).
+- 443 tcp (https).
+- 22 tcp (ssh).
 
 # GENERAL REQUIREMENTS:
 

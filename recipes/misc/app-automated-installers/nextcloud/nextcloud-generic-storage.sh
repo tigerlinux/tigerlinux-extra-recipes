@@ -5,13 +5,13 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # NextCloud Automated Installation Script
-# Rel 1.2
+# Rel 1.3
 # For usage on centos7 64 bits machines.
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
-OSFlavor='unknown'
-lgfile="/var/log/nextcloud-automated-installer.log"
+export OSFlavor='unknown'
+export lgfile="/var/log/nextcloud-automated-installer.log"
 echo "Start Date/Time: `date`" &>>$lgfile
 
 if [ -f /etc/centos-release ]
@@ -34,9 +34,7 @@ then
 	exit 0
 fi
 
-kr64inst=`uname -p 2>/dev/null|grep x86_64|head -n1|wc -l`
-
-if [ $kr64inst != "1" ]
+if [ `uname -p 2>/dev/null|grep x86_64|head -n1|wc -l` != "1" ]
 then
 	echo "Not a 64 bits machine. Aborting !" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -46,12 +44,7 @@ fi
 export mariadbpass=`openssl rand -hex 10`
 export nextcloudadminpass=`openssl rand -hex 10`
 
-cpus=`lscpu -a --extended|grep -ic yes`
-instram=`free -m -t|grep -i mem:|awk '{print $2}'`
-avusr=`df -k --output=avail /usr|tail -n 1`
-avvar=`df -k --output=avail /var|tail -n 1`
-
-if [ $cpus -lt "1" ] || [ $instram -lt "900" ] || [ $avusr -lt "5000000" ] || [ $avvar -lt "5000000" ]
+if [ `lscpu -a --extended|grep -ic yes` -lt "1" ] || [ `free -m -t|grep -i mem:|awk '{print $2}'` -lt "900" ] || [ `df -k --output=avail /usr|tail -n 1` -lt "5000000" ] || [ `df -k --output=avail /var|tail -n 1` -lt "5000000" ]
 then
 	echo "Not enough hardware for NextCloud. Aborting!" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -61,7 +54,16 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y erase firewalld
+yum -y install firewalld
+systemctl enable firewalld
+systemctl restart firewalld
+firewall-cmd --zone=public --add-service=http --permanent
+firewall-cmd --zone=public --add-service=https --permanent
+firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --reload
+
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
 
 if [ `grep -c swapfile /etc/fstab` == "0" ]
 then
@@ -87,14 +89,25 @@ done
 
 mkdir -p /var/nextcloud-sto-data
 
-devicelist=`lsblk -do NAME|grep -v NAME`
+cloudconfigdrive=`grep cloudconfig /etc/fstab |grep -v swap|awk '{print $1}'`
+if [ $cloudconfigdrive ]
+then
+	umount $cloudconfigdrive
+	cat /etc/fstab > /etc/fstab.backup-original
+	cat /etc/fstab|egrep -v $cloudconfigdrive > /etc/fstab.pre-cloudconfigdrive
+	cat /etc/fstab.pre-cloudconfigdrive > /etc/fstab
+fi
+
+devicelist=`lsblk -do NAME,TYPE -nl -e1,2,11|grep disk|grep -v drbd|awk '{print $1}'`
 
 nxsto=''
 for blkst in $devicelist
 do
 	if [ `lsblk -do NAME,TYPE|grep -v NAME|grep disk|awk '{print $1}'|grep -v da|grep -c ^$blkst` == "1" ] \
 	&& [ `blkid |grep $blkst|grep -ci swap` == 0 ] \
-	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ]
+	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ] \
+	&& [ `pvdisplay|grep -ci /dev/$blkst` == 0 ] \
+	&& [ `df -h|grep -ci ^/dev/$blkst` == 0 ]
 	then
 		echo "Device $blkst usable" &>>$lgfile
 		nxsto=$blkst
@@ -129,20 +142,21 @@ EOF
 yum -y update --exclude=kernel*
 yum -y install MariaDB MariaDB-server MariaDB-client galera crudini
 
-echo "" > /etc/my.cnf.d/server-nextcloud.cnf
-
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld binlog_format ROW
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld default-storage-engine innodb
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld innodb_autoinc_lock_mode 2
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld query_cache_type 0
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld query_cache_size 0
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld bind-address 127.0.0.1
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld max_allowed_packet 1024M
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld max_connections 1000
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld innodb_doublewrite 1
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld innodb_log_file_size 100M
-crudini --set /etc/my.cnf.d/server-nextcloud.cnf mysqld innodb_flush_log_at_trx_commit 2
-echo "innodb_file_per_table" >> /etc/my.cnf.d/server-nextcloud.cnf
+cat <<EOF >/etc/my.cnf.d/server-nextcloud.cnf
+[mysqld]
+binlog_format = ROW
+default-storage-engine = innodb
+innodb_autoinc_lock_mode = 2
+query_cache_type = 0
+query_cache_size = 0
+bind-address = 127.0.0.1
+max_allowed_packet = 1024M
+max_connections = 1000
+innodb_doublewrite = 1
+innodb_log_file_size = 100M
+innodb_flush_log_at_trx_commit = 2
+innodb_file_per_table
+EOF
 
 mkdir -p /etc/systemd/system/mariadb.service.d/
 mkdir -p /etc/systemd/system/mariadb.service.d/
@@ -208,6 +222,31 @@ ln -sf `which php` /usr/local/bin/php
 crudini --set /etc/php.ini PHP upload_max_filesize 100M
 crudini --set /etc/php.ini PHP post_max_size 100M
 
+mytimezone=`timedatectl status|grep -i "time zone:"|cut -d: -f2|awk '{print $1}'`
+
+if [ -f /usr/share/zoneinfo/$mytimezone ]
+then
+	crudini --set /etc/php.ini PHP date.timezone "$mytimezone"
+else
+	crudini --set /etc/php.ini PHP date.timezone "UTC"
+fi
+
+yum -y install mod_evasive mod_ssl
+
+cat <<EOF >/etc/httpd/conf.d/extra-security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
+Header always set Strict-Transport-Security "max-age=15552000; includeSubDomains"
+EOF
+
+sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
+
 systemctl enable redis
 systemctl start redis
 
@@ -258,7 +297,6 @@ mycount=1
 
 for myip in $allipaddr
 do
-	echo "Processing IP $myip, counter: $mycount" &>>$lgfile
 	sudo -u apache /usr/local/bin/php \
 	/var/www/html/nextcloud/occ \
 	config:system:set \
@@ -354,5 +392,3 @@ else
 	echo "Nextcloud installation failed" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 fi
-
-# END

@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # Wordpress with Dockerized MariaDB 10.1 Installation Script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.0
+# Release 1.2
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -26,7 +26,6 @@ then
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-	yum -y erase firewalld
 fi
 
 if [ -f /etc/debian_version ]
@@ -64,6 +63,7 @@ echo "MariaDB listen IP: $mariadbip" >> $credentialsfile
 echo "MariaDB listen PORT: $mariadbport" >> $credentialsfile
 echo "Wordpress DB access info: DBName: $wpdbname, DBUser: $wpdbuser, DBUserPass: $wdbuserpass" >> $credentialsfile
 echo "Wordpress URL: http://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
+echo "Wordpress URL - Encrypted: https://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
 
 if [ `uname -p 2>/dev/null|grep x86_64|head -n1|wc -l` != "1" ]
 then
@@ -123,6 +123,14 @@ centos-based)
 	--add-repo \
 	https://download.docker.com/linux/centos/docker-ce.repo
 
+	yum -y install firewalld
+	systemctl enable firewalld
+	systemctl restart firewalld
+	firewall-cmd --zone=public --add-service=http --permanent
+	firewall-cmd --zone=public --add-service=https --permanent
+	firewall-cmd --zone=public --add-service=ssh --permanent
+	firewall-cmd --reload
+
 	yum -y update
 	yum -y install docker-ce
 
@@ -133,7 +141,8 @@ centos-based)
 	
 	yum -y install httpd php-common mod_php php-pear php-opcache \
 	php-pdo php-mbstring php-mysqlnd php-xml php-bcmath \
-	php-json php-cli php-gd php-cli dos2unix
+	php-json php-cli php-gd php-cli dos2unix \
+	mod_evasive mod_ssl
 	
 	export apacheaccount="apache"
 	
@@ -157,6 +166,23 @@ EOF
 	else
 		crudini --set /etc/php.ini PHP date.timezone "UTC"
 	fi
+
+	cat <<EOF >/etc/httpd/conf.d/extra-security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
+<FilesMatch "^(xmlrpc\.php|wp-trackback\.php)">
+Order Deny,Allow
+Deny from all
+</FilesMatch>
+EOF
+
+	sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
+	sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
+	sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
 	
 	systemctl restart httpd
 	systemctl enable httpd
@@ -178,6 +204,16 @@ debian-based)
 	curl \
 	software-properties-common
 
+	DEBIAN_FRONTEND=noninteractive apt-get -y install ufw
+	systemctl enable ufw
+	systemctl restart ufw
+	ufw --force default deny incoming
+	ufw --force default allow outgoing
+	ufw allow ssh/tcp
+	ufw allow http/tcp
+	ufw allow https/tcp
+	ufw --force enable
+
 	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 	add-apt-repository \
 	"deb [arch=amd64] https://download.docker.com/linux/ubuntu \
@@ -194,7 +230,7 @@ debian-based)
 	
 	DEBIAN_FRONTEND=noninteractive apt-get -y install php-curl php-gd \
 	php-mbstring php-mcrypt php-xml php-xmlrpc apache2 php \
-	libapache2-mod-php php-mysql dos2unix
+	libapache2-mod-php php-mysql dos2unix libapache2-mod-evasive
 	
 	export apacheaccount="www-data"
 	
@@ -214,6 +250,23 @@ debian-based)
 </Directory>
 EOF
 
+	cat <<EOF >/etc/apache2/conf-available/security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
+<FilesMatch "^(xmlrpc\.php|wp-trackback\.php)">
+Order Deny,Allow
+Deny from all
+</FilesMatch>
+EOF
+
+	a2enconf security.conf
+	a2ensite default-ssl.conf
+	a2enmod ssl
+	a2enmod evasive
 	a2enconf wordpress-extra.conf
 
 	if [ -f /usr/share/zoneinfo/$mytimezone ]
@@ -233,14 +286,28 @@ unknown)
 	;;
 esac
 
-devicelist=`lsblk -do NAME|grep -v NAME`
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
+
+cloudconfigdrive=`grep cloudconfig /etc/fstab |grep -v swap|awk '{print $1}'`
+if [ $cloudconfigdrive ]
+then
+	umount $cloudconfigdrive
+	cat /etc/fstab > /etc/fstab.backup-original
+	cat /etc/fstab|egrep -v $cloudconfigdrive > /etc/fstab.pre-cloudconfigdrive
+	cat /etc/fstab.pre-cloudconfigdrive > /etc/fstab
+fi
+
+devicelist=`lsblk -do NAME,TYPE -nl -e1,2,11|grep disk|grep -v drbd|awk '{print $1}'`
 
 nxsto=''
 for blkst in $devicelist
 do
 	if [ `lsblk -do NAME,TYPE|grep -v NAME|grep disk|awk '{print $1}'|grep -v da|grep -c ^$blkst` == "1" ] \
 	&& [ `blkid |grep $blkst|grep -ci swap` == 0 ] \
-	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ]
+	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ] \
+	&& [ `pvdisplay|grep -ci /dev/$blkst` == 0 ] \
+	&& [ `df -h|grep -ci ^/dev/$blkst` == 0 ]
 	then
 		echo "Device $blkst usable" &>>$lgfile
 		nxsto=$blkst
@@ -410,5 +477,3 @@ else
 fi
 
 echo "End Date/Time: `date`" &>>$lgfile
-
-#END

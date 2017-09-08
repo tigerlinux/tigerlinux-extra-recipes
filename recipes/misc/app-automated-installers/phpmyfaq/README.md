@@ -26,6 +26,14 @@ systemctl stop docker-mariadb-server
 systemctl status docker-mariadb-server
 ```
 
+# FIREWALLD/UFW
+
+Depenging on the distro (centos7 or ubuntu1604lts) firewalld/ufw will be installed and configured. The only ports to open will be:
+
+- 22 tcp (ssh).
+- 80 tcp (http).
+- 443 tcp (https).
+
 Please note that this script will disable both firewalld and selinux if the machine is a Centos 7. If you want you can install them back after this script finish its run.
 
 # GENERAL REQUIREMENTS:

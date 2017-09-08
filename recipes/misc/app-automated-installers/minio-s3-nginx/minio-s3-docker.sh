@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # Minio-S3 installation script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.1
+# Release 1.2
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -15,10 +15,16 @@ lgfile="/var/log/minio-s3-docker-install.log"
 echo "Start Date/Time: `date`" &>>$lgfile
 export OSFlavor='unknown'
 export nginxport='8080'
+export nginxsslport='8443'
 
 if [ $nginxport == "9000" ]
 then
 	nginxport='8080'
+fi
+
+if [ $nginxsslport == "9000" ]
+then
+	nginxsslport='8443'
 fi
 
 if [ -f /etc/centos-release ]
@@ -29,7 +35,7 @@ then
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-	yum -y erase firewalld
+
 fi
 
 if [ -f /etc/debian_version ]
@@ -119,6 +125,15 @@ centos-based)
 	https://download.docker.com/linux/centos/docker-ce.repo
 
 	yum -y update --exclude=kernel*
+
+	yum -y install firewalld
+	systemctl enable firewalld
+	systemctl restart firewalld
+	firewall-cmd --zone=public --add-service=ssh --permanent
+	firewall-cmd --zone=public --add-port=$nginxport/tcp --permanent
+	firewall-cmd --zone=public --add-port=$nginxsslport/tcp --permanent
+	firewall-cmd --reload
+
 	yum -y install docker-ce
 
 	systemctl start docker
@@ -127,6 +142,8 @@ centos-based)
 	yum -y install nginx
 
 	cat /etc/nginx/nginx.conf >> /etc/nginx/nginx.conf.original
+	
+	openssl dhparam -out /etc/nginx/dhparams.pem 2048
 
 	cat <<EOF >/etc/nginx/nginx.conf
 include /usr/share/nginx/modules/*.conf;
@@ -134,35 +151,66 @@ events {
     worker_connections 1024;
 }
 http {
-    client_max_body_size 1000m;
-    log_format  main  '\$remote_addr - \$remote_user [$time_local] "\$request" '
-                      '\$status \$body_bytes_sent "\$http_referer" '
-                      '"\$http_user_agent" "\$http_x_forwarded_for"';
+ client_max_body_size 1000m;
+ log_format  main  '\$remote_addr - \$remote_user [$time_local] "\$request" '
+                   '\$status \$body_bytes_sent "\$http_referer" '
+                   '"\$http_user_agent" "\$http_x_forwarded_for"';
 
-    access_log  /var/log/nginx/access.log  main;
-    sendfile            on;
-    tcp_nopush          on;
-    tcp_nodelay         on;
-    keepalive_timeout   65;
-    types_hash_max_size 2048;
-    include             /etc/nginx/mime.types;
-    default_type        application/octet-stream;
-    include /etc/nginx/conf.d/*.conf;
-    server {
-        listen       $nginxport default_server;
-        listen       [::]:$nginxport default_server;
+ access_log  /var/log/nginx/access.log  main;
+ sendfile            on;
+ tcp_nopush          on;
+ tcp_nodelay         on;
+ keepalive_timeout   65;
+ types_hash_max_size 2048;
+ include             /etc/nginx/mime.types;
+ default_type        application/octet-stream;
+ include /etc/nginx/conf.d/*.conf;
+ server {
+  listen $nginxport default_server;
+  listen [::]:$nginxport default_server;
 
-        server_name `hostname`;
-        location / {
-           proxy_buffering off;
-           proxy_set_header Host \$http_host;
-           proxy_pass http://127.0.0.1:9000;
-        }
-    }
+  server_name `hostname`;
+  location / {
+   proxy_buffering off;
+   proxy_set_header Host \$http_host;
+   proxy_pass http://127.0.0.1:9000;
+  }
+ }
+ server {
+  listen $nginxsslport ssl http2 default_server;
+  listen [::]:$nginxsslport ssl http2 default_server;
+  ssl_certificate "/etc/pki/nginx/server.crt";
+  ssl_certificate_key "/etc/pki/nginx/private/server.key";
+  include /etc/nginx/default.d/sslconfig.conf;
+
+  server_name `hostname`;
+  location / {
+   proxy_buffering off;
+   proxy_set_header Host \$http_host;
+   proxy_pass http://127.0.0.1:9000;
+  }
+ }
 }
 EOF
 
-	systemctl start nginx
+	cat <<EOF>/etc/nginx/default.d/sslconfig.conf
+ssl_session_cache shared:SSL:1m;
+ssl_session_timeout  10m;
+ssl_prefer_server_ciphers on;
+ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:!DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
+ssl_dhparam /etc/nginx/dhparams.pem;
+EOF
+
+	mkdir -p /etc/pki/nginx
+	mkdir -p /etc/pki/nginx/private
+
+	openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt
+
+	chmod 0600 /etc/pki/nginx/private/server.key
+	chown nginx.nginx /etc/pki/nginx/private/server.key
+
+	systemctl restart nginx
 	systemctl enable nginx
 
 	yum -y install jq
@@ -184,6 +232,16 @@ debian-based)
 	curl \
 	software-properties-common
 
+	apt-get -y install ufw
+	systemctl enable ufw
+	systemctl restart ufw
+	ufw --force default deny incoming
+	ufw --force default allow outgoing
+	ufw allow ssh/tcp
+	ufw allow $nginxport/tcp
+	ufw allow $nginxsslport/tcp
+	ufw --force enable
+
 	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 	add-apt-repository \
 	"deb [arch=amd64] https://download.docker.com/linux/ubuntu \
@@ -200,22 +258,57 @@ debian-based)
 	
 	DEBIAN_FRONTEND=noninteractive apt-get -y install nginx-full
 	cat /etc/nginx/sites-available/default > /etc/nginx/sites-available/default-original
+	
+	openssl dhparam -out /etc/nginx/dhparams.pem 2048
 
 	cat <<EOF >/etc/nginx/sites-available/default
 server {
-        listen $nginxport default_server;
-        listen [::]:$nginxport default_server;
-		root /var/www/html;
-		index index.html index.htm index.nginx-debian.html;
-		server_name `hostname`;
-		location / {
-			try_files $uri $uri/ =404;
-			proxy_buffering off;
-			proxy_set_header Host \$http_host;
-			proxy_pass http://127.0.0.1:9000;
-		}
+ listen $nginxport default_server;
+ listen [::]:$nginxport default_server;
+ root /var/www/html;
+ index index.html index.htm index.nginx-debian.html;
+ server_name `hostname`;
+ location / {
+  try_files $uri $uri/ =404;
+  proxy_buffering off;
+  proxy_set_header Host \$http_host;
+  proxy_pass http://127.0.0.1:9000;
+ }
+}
+server {
+ listen $nginxsslport ssl http2 default_server;
+ listen [::]:$nginxsslport ssl http2 default_server;
+ ssl_certificate "/etc/pki/nginx/server.crt";
+ ssl_certificate_key "/etc/pki/nginx/private/server.key";
+ include /etc/nginx/sslconfig.conf;
+ root /var/www/html;
+ index index.html index.htm index.nginx-debian.html;
+ server_name `hostname`;
+ location / {
+  try_files $uri $uri/ =404;
+  proxy_buffering off;
+  proxy_set_header Host \$http_host;
+  proxy_pass http://127.0.0.1:9000;
+ }
 }
 EOF
+
+	cat <<EOF>/etc/nginx/sslconfig.conf
+ssl_session_cache shared:SSL:1m;
+ssl_session_timeout  10m;
+ssl_prefer_server_ciphers on;
+ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:!DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
+ssl_dhparam /etc/nginx/dhparams.pem;
+EOF
+
+	mkdir -p /etc/pki/nginx
+	mkdir -p /etc/pki/nginx/private
+
+	openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt
+
+	chmod 0600 /etc/pki/nginx/private/server.key
+	chown www-data.www-data /etc/pki/nginx/private/server.key
 
 	systemctl enable nginx
 	systemctl restart nginx
@@ -227,14 +320,28 @@ unknown)
 	;;
 esac
 
-devicelist=`lsblk -do NAME|grep -v NAME`
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
+
+cloudconfigdrive=`grep cloudconfig /etc/fstab |grep -v swap|awk '{print $1}'`
+if [ $cloudconfigdrive ]
+then
+	umount $cloudconfigdrive
+	cat /etc/fstab > /etc/fstab.backup-original
+	cat /etc/fstab|egrep -v $cloudconfigdrive > /etc/fstab.pre-cloudconfigdrive
+	cat /etc/fstab.pre-cloudconfigdrive > /etc/fstab
+fi
+
+devicelist=`lsblk -do NAME,TYPE -nl -e1,2,11|grep disk|grep -v drbd|awk '{print $1}'`
 
 nxsto=''
 for blkst in $devicelist
 do
 	if [ `lsblk -do NAME,TYPE|grep -v NAME|grep disk|awk '{print $1}'|grep -v da|grep -c ^$blkst` == "1" ] \
 	&& [ `blkid |grep $blkst|grep -ci swap` == 0 ] \
-	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ]
+	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ] \
+	&& [ `pvdisplay|grep -ci /dev/$blkst` == 0 ] \
+	&& [ `df -h|grep -ci ^/dev/$blkst` == 0 ]
 	then
 		echo "Device $blkst usable" &>>$lgfile
 		nxsto=$blkst
@@ -313,9 +420,11 @@ for myip in $allipaddr
 do
 	mycount=$[mycount+1]
 	echo "- http://$myip:$nginxport" >> /root/minios3-credentials.txt
+	echo "- https://$myip:$nginxsslport" >> /root/minios3-credentials.txt
 done
 
 echo "- http://`hostname`:$nginxport" >> /root/minios3-credentials.txt
+echo "- https://`hostname`:$nginxsslport" >> /root/minios3-credentials.txt
 mycount=$[mycount+1]
 
 publicip=`curl http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null`
@@ -326,6 +435,7 @@ then
 	echo "No metadata-based public IP detected" &>>$lgfile
 else
 	echo "- http://$publicip:$nginxport" >> /root/minios3-credentials.txt
+	echo "- https://$publicip:$nginxsslport" >> /root/minios3-credentials.txt
 	mycount=$[mycount+1]
 fi
 
@@ -334,6 +444,7 @@ then
 	echo "No metadata-based public hostname detected" &>>$lgfile
 else
 	echo "- http://$publichostname:$nginxport" >> /root/minios3-credentials.txt
+	echo "- https://$publichostname:$nginxsslport" >> /root/minios3-credentials.txt
 	mycount=$[mycount+1]
 fi
 
@@ -347,4 +458,3 @@ fi
 
 echo "End Date/Time: `date`" &>>$lgfile
 
-#END

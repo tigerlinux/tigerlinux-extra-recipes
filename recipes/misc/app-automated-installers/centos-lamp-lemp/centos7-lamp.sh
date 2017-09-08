@@ -5,9 +5,9 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LAMP Server Installation Script
-# Rel 1.1
+# Rel 1.2
 # For usage on centos7 64 bits machines.
-#
+# (includes phpmyadmin installation as an option)
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 OSFlavor='unknown'
@@ -21,13 +21,17 @@ export debug="no"
 # export phpversion="71"
 # anything else for "distro" included php version
 # export phpversion="standard"
-export phpversion="56"
+export phpversion="71"
+# If you want phpmyadmin, let next variable to "yes"
+phpmyadmin="yes"
 
 if [ -f /etc/centos-release ]
 then
 	OSFlavor='centos-based'
 	yum clean all
-	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which lvm2 sudo hostname
+	yum -y install coreutils grep curl wget redhat-lsb-core net-tools \
+	git findutils iproute grep openssh sed gawk openssl which xz bzip2 \
+	util-linux procps-ng which lvm2 sudo hostname
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -70,7 +74,16 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y erase firewalld
+yum -y install firewalld
+systemctl enable firewalld
+systemctl restart firewalld
+firewall-cmd --zone=public --add-service=http --permanent
+firewall-cmd --zone=public --add-service=https --permanent
+firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --reload
+
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
 
 if [ `grep -c swapfile /etc/fstab` == "0" ]
 then
@@ -203,7 +216,7 @@ case $phpversion in
 	yum -y erase php-common
 	yum -y install httpd mod_php71w php71w php71w-opcache \
 	php71w-pear php71w-pdo php71w-xml php71w-pdo_dblib \
-	php71w-mbstring php71w-mysql php71w-mcrypt php71w-fpm \
+	php71w-mbstring php71w-mysqlnd php71w-mcrypt php71w-fpm \
 	php71w-bcmath php71w-gd php71w-cli
 	;;
 *)
@@ -216,6 +229,16 @@ esac
 
 crudini --set /etc/php.ini PHP upload_max_filesize 100M
 crudini --set /etc/php.ini PHP post_max_size 100M
+mytimezone=`timedatectl status|grep -i "time zone:"|cut -d: -f2|awk '{print $1}'`
+
+if [ -f /usr/share/zoneinfo/$mytimezone ]
+then
+	crudini --set /etc/php.ini PHP date.timezone "$mytimezone"
+else
+	crudini --set /etc/php.ini PHP date.timezone "UTC"
+fi
+
+yum -y install python-certbot-apache mod_evasive mod_ssl
 
 
 cat <<EOF >/var/www/html/index.html
@@ -228,12 +251,109 @@ cat <<EOF >/var/www/html/index.html
 </html>
 EOF
 
-cat <<EOF > /var/www/html/info.php
-<?php phpinfo(); ?>
+cat <<EOF >/etc/httpd/conf.d/extra-security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
 EOF
+
+sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
+
+if [ $phpmyadmin == "yes" ]
+then
+	export phpmyadminpass=`openssl rand -hex 10`
+	wget https://files.phpmyadmin.net/phpMyAdmin/4.7.4/phpMyAdmin-4.7.4-all-languages.tar.gz -O /root/phpMyAdmin-4.7.4-all-languages.tar.gz
+	tar -xzvf /root/phpMyAdmin-4.7.4-all-languages.tar.gz -C /var/www/
+	rm -f /root/phpMyAdmin-4.7.4-all-languages.tar.gz
+	mv /var/www/phpMyAdmin* /var/www/phpmyadmin
+	cat<<EOF>/var/www/phpmyadmin/config.inc.php
+<?php
+\$cfg['blowfish_secret'] = '`openssl rand -hex 16`';
+\$i = 0;
+\$i++;
+\$cfg['Servers'][\$i]['auth_type'] = 'cookie';
+\$cfg['Servers'][\$i]['host'] = '127.0.0.1';
+\$cfg['Servers'][\$i]['compress'] = false;
+\$cfg['Servers'][\$i]['AllowNoPassword'] = false;
+\$cfg['UploadDir'] = '/var/www/phpmyadmin/uploads';
+\$cfg['SaveDir'] = '/var/www/phpmyadmin/saves';
+\$cfg['Servers'][\$i]['controlhost'] = '127.0.0.1';
+\$cfg['Servers'][\$i]['controlport'] = '3306';
+\$cfg['Servers'][\$i]['controluser'] = 'phpmyadminuser';
+\$cfg['Servers'][\$i]['controlpass'] = '$phpmyadminpass';
+\$cfg['Servers'][\$i]['pmadb'] = 'phpmyadmin';
+\$cfg['Servers'][\$i]['bookmarktable'] = 'pma__bookmark';
+\$cfg['Servers'][\$i]['relation'] = 'pma__relation';
+\$cfg['Servers'][\$i]['table_info'] = 'pma__table_info';
+\$cfg['Servers'][\$i]['table_coords'] = 'pma__table_coords';
+\$cfg['Servers'][\$i]['pdf_pages'] = 'pma__pdf_pages';
+\$cfg['Servers'][\$i]['column_info'] = 'pma__column_info';
+\$cfg['Servers'][\$i]['history'] = 'pma__history';
+\$cfg['Servers'][\$i]['table_uiprefs'] = 'pma__table_uiprefs';
+\$cfg['Servers'][\$i]['tracking'] = 'pma__tracking';
+\$cfg['Servers'][\$i]['userconfig'] = 'pma__userconfig';
+\$cfg['Servers'][\$i]['recent'] = 'pma__recent';
+\$cfg['Servers'][\$i]['favorite'] = 'pma__favorite';
+\$cfg['Servers'][\$i]['users'] = 'pma__users';
+\$cfg['Servers'][\$i]['usergroups'] = 'pma__usergroups';
+\$cfg['Servers'][\$i]['navigationhiding'] = 'pma__navigationhiding';
+\$cfg['Servers'][\$i]['savedsearches'] = 'pma__savedsearches';
+\$cfg['Servers'][\$i]['central_columns'] = 'pma__central_columns';
+\$cfg['Servers'][\$i]['designer_settings'] = 'pma__designer_settings';
+\$cfg['Servers'][\$i]['export_templates'] = 'pma__export_templates';
+EOF
+	mkdir -p /var/www/phpmyadmin/uploads
+	mkdir -p /var/www/phpmyadmin/saves
+	chown -R root.root /var/www/phpmyadmin
+	chown -R apache.apache /var/www/phpmyadmin/uploads /var/www/phpmyadmin/saves
+	cat <<EOF>/etc/httpd/conf.d/phpmyadmin.conf
+Alias /phpmyadmin /var/www/phpmyadmin
+<Directory /var/www/phpmyadmin/>
+  Options Indexes FollowSymLinks
+  AllowOverride All
+  Require all granted
+</Directory>
+EOF
+	
+	cat<<EOF >/root/os-db.sql
+CREATE DATABASE IF NOT EXISTS phpmyadmin default character set utf8;
+GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'%' IDENTIFIED BY '$phpmyadminpass';
+GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'127.0.0.1' IDENTIFIED BY '$phpmyadminpass';
+GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'localhost' IDENTIFIED BY '$phpmyadminpass';
+FLUSH PRIVILEGES;
+EOF
+	mysql < /root/os-db.sql
+	mysql -u root -h 127.0.0.1 -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` < /root/os-db.sql
+	mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep password /root/.my.cnf |cut -d\" -f2` < /root/os-db.sql
+
+	mysql -u root -h 127.0.0.1 -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` < /var/www/phpmyadmin/sql/create_tables.sql
+	mysql < /var/www/phpmyadmin/sql/create_tables.sql
+	mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep password /root/.my.cnf |cut -d\" -f2` < /var/www/phpmyadmin/sql/create_tables.sql
+	
+	echo "PHPMYADMIN URL: http://`ip route get 1 | awk '{print $NF;exit}'`/phpmyadmin" >> $credfile
+	rm -f /root/os-db.sql
+fi
 
 systemctl enable httpd
 systemctl restart httpd
+
+cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
+#
+#
+# Letsencrypt automated renewal
+#
+# Every day at 01:30am
+#
+30 01 * * * root /usr/bin/certbot renew > /var/log/le-renew.log 2>&1
+#
+EOF
+
+systemctl reload crond
 
 finalcheck=`curl --write-out %{http_code} --silent --output /dev/null http://127.0.0.1/info.php|grep -c 200`
 
@@ -247,5 +367,3 @@ else
 	echo "LAMP Server install failed" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 fi
-
-# END

@@ -22,9 +22,10 @@ Copy the script to any place inside the operating system, and run it as "root" (
 The script can also be used in any cloud supporting "user_data" or "bootstrap" scripts (AWS, OpenStack, Digital Ocean, etc.).
 
 
-## TCP ports exposed:
+## TCP ports exposed (FIREWALLD):
 
-- Nextcloud will expose port 80 tcp.
+- SSH (22 tcp).
+- Nextcloud will expose ports 80 tcp (http) and 443 tcp (https).
 - Minio will expose port 8080 tcp.
 
 

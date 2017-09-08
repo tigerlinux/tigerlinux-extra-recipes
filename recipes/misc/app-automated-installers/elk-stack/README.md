@@ -8,7 +8,16 @@ The web frontend (using nginx) is password-protected. The credentiales are store
 
 Filebeat has been installed and configured on the ELK Stack server and it will send all logs to logstash (and from there to elasticsearch). You'll need to creat and index with the pattern "filebeat-*" in your kibana web frontend in order to use the information shipped by filebeat.
 
-Please note that this script will disable both firewalld and selinux. If you want you can install them back after this script finish its run.
+Please note that this script will disable selinux.
+
+# OPENED PORTS
+
+FirewallD allow traffic for the following ports only (input traffic):
+
+- 80 tcp (http).
+- 443 tcp (https).
+- 22 tcp (ssh).
+- 5044 tcp (logstash forwarder - encrypted).
 
 # GENERAL REQUIREMENTS:
 

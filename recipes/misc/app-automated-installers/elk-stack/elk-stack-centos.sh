@@ -6,14 +6,14 @@
 # https://github.com/tigerlinux
 # ELK Stack Server Setup for Centos 7 64 bits
 # (ELK = ElasticSearch, Logstack, Kibana)
-# Release 1.1
+# Release 1.2
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 
-lgfile="/var/log/elk-stack-automated-install.log"
+export lgfile="/var/log/elk-stack-automated-install.log"
 echo "Start Date/Time: `date`" &>>$lgfile
-credentialsfile="/root/elk-stack-credentials.txt"
+export credentialsfile="/root/elk-stack-credentials.txt"
 export OSFlavor='unknown'
 # Set your java preference... either OpenJDK or Oracle JDK
 # The next variable should be set to:
@@ -31,7 +31,6 @@ then
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-	yum -y erase firewalld
 else
 	echo "Not a centos server. Aborting!" &>>$lgfile
 	exit 0
@@ -94,6 +93,15 @@ yum -y install yum-utils device-mapper-persistent-data unzip
 
 yum -y update --exclude=kernel*
 
+yum -y install firewalld
+systemctl enable firewalld
+systemctl restart firewalld
+firewall-cmd --zone=public --add-service=http --permanent
+firewall-cmd --zone=public --add-service=https --permanent
+firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --zone=public --add-port=5044/tcp --permanent
+firewall-cmd --reload
+
 case $javaversion in
 "oraclejdk")
 	wget \
@@ -131,6 +139,9 @@ autorefresh=1
 type=rpm-md
 EOF
 
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
+
 yum -y update --exclude=kernel*
 
 yum -y install elasticsearch
@@ -159,6 +170,8 @@ echo "Password: $kibanaadminpass" >> $credentialsfile
 echo "URL: http://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
 
 cat /etc/nginx/nginx.conf >> /etc/nginx/nginx.conf.original
+
+openssl dhparam -out /etc/nginx/dhparams.pem 2048
 
 cat <<EOF >/etc/nginx/nginx.conf
 include /usr/share/nginx/modules/*.conf;
@@ -196,10 +209,46 @@ http {
         proxy_pass http://127.0.0.1:5601;
      }
    }
+   server {
+      listen       443 ssl http2 default_server;
+      listen       [::]:443 ssl http2 default_server;
+      ssl_certificate "/etc/pki/nginx/server.crt";
+      ssl_certificate_key "/etc/pki/nginx/private/server.key";
+      include /etc/nginx/default.d/sslconfig.conf;
+
+      server_name _;
+      auth_basic "Restricted Access";
+      auth_basic_user_file /etc/nginx/htpasswd.users;
+
+      location / {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_pass http://127.0.0.1:5601;
+     }
+   }
 }
 EOF
 
-systemctl start nginx
+cat <<EOF>/etc/nginx/default.d/sslconfig.conf
+ssl_session_cache shared:SSL:1m;
+ssl_session_timeout  10m;
+ssl_prefer_server_ciphers on;
+ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:!DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
+ssl_dhparam /etc/nginx/dhparams.pem;
+EOF
+
+mkdir -p /etc/pki/nginx
+mkdir -p /etc/pki/nginx/private
+
+openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt
+
+chmod 0600 /etc/pki/nginx/private/server.key
+chown nginx.nginx /etc/pki/nginx/private/server.key
+
+systemctl restart nginx
 systemctl enable nginx
 
 yum -y install logstash

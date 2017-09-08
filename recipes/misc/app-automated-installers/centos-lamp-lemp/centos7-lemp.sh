@@ -5,9 +5,9 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LEMP Server Installation Script
-# Rel 1.1
+# Rel 1.2
 # For usage on centos7 64 bits machines.
-#
+# (includes phpmyadmin installation as an option)
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 OSFlavor='unknown'
@@ -21,13 +21,17 @@ export debug="no"
 # export phpversion="71"
 # anything else for "distro" included php version
 # export phpversion="standard"
-export phpversion="56"
+export phpversion="71"
+# If you want phpmyadmin, let next variable to "yes"
+phpmyadmin="yes"
 
 if [ -f /etc/centos-release ]
 then
 	OSFlavor='centos-based'
 	yum clean all
-	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which lvm2 sudo hostname
+	yum -y install coreutils grep curl wget redhat-lsb-core net-tools \
+	git findutils iproute grep openssh sed gawk openssl which xz bzip2 \
+	util-linux procps-ng which lvm2 sudo hostname
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -70,7 +74,16 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y erase firewalld
+yum -y install firewalld
+systemctl enable firewalld
+systemctl restart firewalld
+firewall-cmd --zone=public --add-service=http --permanent
+firewall-cmd --zone=public --add-service=https --permanent
+firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --reload
+
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
 
 if [ `grep -c swapfile /etc/fstab` == "0" ]
 then
@@ -114,7 +127,7 @@ fi
 yum -y update --exclude=kernel*
 yum -y install MariaDB MariaDB-server MariaDB-client galera crudini
 
-cat <<EOF >/etc/my.cnf.d/server-lamp.cnf
+cat <<EOF >/etc/my.cnf.d/server-lemp.cnf
 [mysqld]
 binlog_format = ROW
 default-storage-engine = innodb
@@ -130,7 +143,6 @@ innodb_flush_log_at_trx_commit = 2
 innodb_file_per_table
 EOF
 
-mkdir -p /etc/systemd/system/mariadb.service.d/
 mkdir -p /etc/systemd/system/mariadb.service.d/
 cat <<EOF >/etc/systemd/system/mariadb.service.d/limits.conf
 [Service]
@@ -191,10 +203,6 @@ case $phpversion in
 	bash /opt/rh/rh-php56/register
 	scl enable rh-php56 bash
 	ln -sf 	/etc/opt/rh/rh-php56/php.ini /etc/php.ini
-	crudini --set /etc/php.ini PHP upload_max_filesize 100M
-	crudini --set /etc/php.ini PHP post_max_size 100M
-	systemctl enable rh-php56-php-fpm
-	systemctl start rh-php56-php-fpm
 	;;
 71)
 	yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
@@ -204,22 +212,30 @@ case $phpversion in
 	php71w-pdo php71w-xml php71w-pdo_dblib php71w-mbstring \
 	php71w-mysqlnd php71w-mcrypt php71w-fpm php71w-bcmath \
 	php71w-gd php71w-cli php71w-json
-	crudini --set /etc/php.ini PHP upload_max_filesize 100M
-	crudini --set /etc/php.ini PHP post_max_size 100M
-	systemctl enable php-fpm
-	systemctl start php-fpm
 	;;
 *)
 	yum -y update --exclude=kernel*
 	yum -y install nginx php-common php-fpm php-pear php-opcache php-pdo \
 	php-mbstring php-mysqlnd php-xml php-bcmath php-json php-cli php-gd
-	crudini --set /etc/php.ini PHP upload_max_filesize 100M
-	crudini --set /etc/php.ini PHP post_max_size 100M
-	systemctl enable php-fpm
-	systemctl start php-fpm
 	;;
 esac
 
+crudini --set /etc/php.ini PHP upload_max_filesize 100M
+crudini --set /etc/php.ini PHP post_max_size 100M
+mytimezone=`timedatectl status|grep -i "time zone:"|cut -d: -f2|awk '{print $1}'`
+
+if [ -f /usr/share/zoneinfo/$mytimezone ]
+then
+	crudini --set /etc/php.ini PHP date.timezone "$mytimezone"
+else
+	crudini --set /etc/php.ini PHP date.timezone "UTC"
+fi
+systemctl enable php-fpm >/dev/null 2>&1
+systemctl start php-fpm >/dev/null 2>&1
+systemctl enable rh-php56-php-fpm >/dev/null 2>&1
+systemctl start rh-php56-php-fpm >/dev/null 2>&1
+
+openssl dhparam -out /etc/nginx/dhparams.pem 2048
 
 cat <<EOF >/etc/nginx/nginx.conf
 user nginx;
@@ -230,65 +246,212 @@ pid /run/nginx.pid;
 include /usr/share/nginx/modules/*.conf;
 
 events {
-    worker_connections 1024;
+ worker_connections 1024;
 }
 
 http {
-    log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
-                      '\$status \$body_bytes_sent "\$http_referer" '
-                      '"\$http_user_agent" "\$http_x_forwarded_for"';
+ log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+ '\$status \$body_bytes_sent "\$http_referer" '
+ '"\$http_user_agent" "\$http_x_forwarded_for"';
 
-    access_log  /var/log/nginx/access.log  main;
+  access_log  /var/log/nginx/access.log  main;
 
-    sendfile            on;
-    tcp_nopush          on;
-    tcp_nodelay         on;
-    keepalive_timeout   65;
-    types_hash_max_size 2048;
+ sendfile            on;
+ tcp_nopush          on;
+ tcp_nodelay         on;
+ keepalive_timeout   65;
+ types_hash_max_size 2048;
 
-    include             /etc/nginx/mime.types;
-    default_type        application/octet-stream;
+ include             /etc/nginx/mime.types;
+ default_type        application/octet-stream;
 
-    include /etc/nginx/conf.d/*.conf;
+ include /etc/nginx/conf.d/*.conf;
 
-    server {
-        listen       80 default_server;
-        listen       [::]:80 default_server;
-        server_name  _;
-        root         /usr/share/nginx/html;
+ server {
+  listen       80 default_server;
+  listen       [::]:80 default_server;
+  server_name  _;
+  root /usr/share/nginx/html;
 
-        # Load configuration files for the default server block.
-        include /etc/nginx/default.d/*.conf;
+  # Load configuration files for the default server block.
+  include /etc/nginx/default.d/*.conf;
 
-        location / {
-            location ~ ^/.+\.php {
-                fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
-                fastcgi_index  index.php;
-                fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
-                fastcgi_param PATH_INFO \$fastcgi_path_info;
-                fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
-                include        fastcgi_params;
-                fastcgi_pass   127.0.0.1:9000;
-            }
-        }
+  location / {
+    location ~ ^/.+\.php {
+    fastcgi_param  SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+    fastcgi_index  index.php;
+    fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
+    fastcgi_param PATH_INFO \$fastcgi_path_info;
+    fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
+    include fastcgi_params;
+    fastcgi_pass 127.0.0.1:9000;
+  }
+ }
 
-        error_page 404 /404.html;
-            location = /40x.html {
-        }
+ error_page 404 /404.html;
+ location = /40x.html {
+ }
 
-        error_page 500 502 503 504 /50x.html;
-            location = /50x.html {
-        }
+ error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+ }
+ server {
+  listen 443 ssl http2 default_server;
+  listen [::]:443 ssl http2 default_server;
+  server_name  _;
+  root /usr/share/nginx/html;
+
+  ssl_certificate "/etc/pki/nginx/server.crt";
+  ssl_certificate_key "/etc/pki/nginx/private/server.key";
+
+  include /etc/nginx/default.d/*.conf;
+
+  location / {
+    location ~ ^/.+\.php {
+      fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
+      fastcgi_index  index.php;
+      fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
+      fastcgi_param PATH_INFO \$fastcgi_path_info;
+      fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
+      include fastcgi_params;
+      fastcgi_pass 127.0.0.1:9000;
     }
+  }
+
+  error_page 404 /404.html;
+  location = /40x.html {
+  }
+
+  error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+ }
 }
 EOF
 
-cat > /usr/share/nginx/html/info.php <<_EOF_
-<?php phpinfo(); ?>
-_EOF_
+cat <<EOF>/etc/nginx/default.d/sslconfig.conf
+ssl_session_cache shared:SSL:1m;
+ssl_session_timeout  10m;
+ssl_prefer_server_ciphers on;
+ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:!DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
+ssl_dhparam /etc/nginx/dhparams.pem;
+EOF
+
+mkdir -p /etc/pki/nginx
+mkdir -p /etc/pki/nginx/private
+
+openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt
+
+chmod 0600 /etc/pki/nginx/private/server.key
+chown nginx.nginx /etc/pki/nginx/private/server.key
+
+if [ $phpmyadmin == "yes" ]
+then
+	export phpmyadminpass=`openssl rand -hex 10`
+	wget https://files.phpmyadmin.net/phpMyAdmin/4.7.4/phpMyAdmin-4.7.4-all-languages.tar.gz -O /root/phpMyAdmin-4.7.4-all-languages.tar.gz
+	mkdir -p /var/www
+	tar -xzvf /root/phpMyAdmin-4.7.4-all-languages.tar.gz -C /var/www/
+	rm -f /root/phpMyAdmin-4.7.4-all-languages.tar.gz
+	mv /var/www/phpMyAdmin* /var/www/phpmyadmin
+	cat<<EOF>/var/www/phpmyadmin/config.inc.php
+<?php
+\$cfg['blowfish_secret'] = '`openssl rand -hex 16`';
+\$i = 0;
+\$i++;
+\$cfg['Servers'][\$i]['auth_type'] = 'cookie';
+\$cfg['Servers'][\$i]['host'] = '127.0.0.1';
+\$cfg['Servers'][\$i]['compress'] = false;
+\$cfg['Servers'][\$i]['AllowNoPassword'] = false;
+\$cfg['UploadDir'] = '/var/www/phpmyadmin/uploads';
+\$cfg['SaveDir'] = '/var/www/phpmyadmin/saves';
+\$cfg['Servers'][\$i]['controlhost'] = '127.0.0.1';
+\$cfg['Servers'][\$i]['controlport'] = '3306';
+\$cfg['Servers'][\$i]['controluser'] = 'phpmyadminuser';
+\$cfg['Servers'][\$i]['controlpass'] = '$phpmyadminpass';
+\$cfg['Servers'][\$i]['pmadb'] = 'phpmyadmin';
+\$cfg['Servers'][\$i]['bookmarktable'] = 'pma__bookmark';
+\$cfg['Servers'][\$i]['relation'] = 'pma__relation';
+\$cfg['Servers'][\$i]['table_info'] = 'pma__table_info';
+\$cfg['Servers'][\$i]['table_coords'] = 'pma__table_coords';
+\$cfg['Servers'][\$i]['pdf_pages'] = 'pma__pdf_pages';
+\$cfg['Servers'][\$i]['column_info'] = 'pma__column_info';
+\$cfg['Servers'][\$i]['history'] = 'pma__history';
+\$cfg['Servers'][\$i]['table_uiprefs'] = 'pma__table_uiprefs';
+\$cfg['Servers'][\$i]['tracking'] = 'pma__tracking';
+\$cfg['Servers'][\$i]['userconfig'] = 'pma__userconfig';
+\$cfg['Servers'][\$i]['recent'] = 'pma__recent';
+\$cfg['Servers'][\$i]['favorite'] = 'pma__favorite';
+\$cfg['Servers'][\$i]['users'] = 'pma__users';
+\$cfg['Servers'][\$i]['usergroups'] = 'pma__usergroups';
+\$cfg['Servers'][\$i]['navigationhiding'] = 'pma__navigationhiding';
+\$cfg['Servers'][\$i]['savedsearches'] = 'pma__savedsearches';
+\$cfg['Servers'][\$i]['central_columns'] = 'pma__central_columns';
+\$cfg['Servers'][\$i]['designer_settings'] = 'pma__designer_settings';
+\$cfg['Servers'][\$i]['export_templates'] = 'pma__export_templates';
+EOF
+	mkdir -p /var/www/phpmyadmin/uploads
+	mkdir -p /var/www/phpmyadmin/saves
+	chown -R root.root /var/www/phpmyadmin
+	chown -R apache.apache /var/www/phpmyadmin/uploads /var/www/phpmyadmin/saves
+	
+	cat<<EOF >/root/os-db.sql
+CREATE DATABASE IF NOT EXISTS phpmyadmin default character set utf8;
+GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'%' IDENTIFIED BY '$phpmyadminpass';
+GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'127.0.0.1' IDENTIFIED BY '$phpmyadminpass';
+GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'localhost' IDENTIFIED BY '$phpmyadminpass';
+FLUSH PRIVILEGES;
+EOF
+	mysql < /root/os-db.sql
+	mysql -u root -h 127.0.0.1 -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` < /root/os-db.sql
+	mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep password /root/.my.cnf |cut -d\" -f2` < /root/os-db.sql
+
+	mysql -u root -h 127.0.0.1 -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` < /var/www/phpmyadmin/sql/create_tables.sql
+	mysql < /var/www/phpmyadmin/sql/create_tables.sql
+	mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep password /root/.my.cnf |cut -d\" -f2` < /var/www/phpmyadmin/sql/create_tables.sql
+	
+	echo "PHPMYADMIN URL: http://`ip route get 1 | awk '{print $NF;exit}'`/phpmyadmin" >> $credfile
+	rm -f /root/os-db.sql
+	cat<<EOF>/etc/nginx/default.d/phpmyadmin.conf
+location /phpmyadmin {
+  root /var/www/;
+  index index.php index.html index.htm;
+    location ~ ^/phpmyadmin/(.+\.php)$ {
+    try_files \$uri =404;
+    root /var/www/;
+    fastcgi_pass 127.0.0.1:9000;
+    fastcgi_index index.php;
+    fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+    include fastcgi_params;
+  }
+  location ~* ^/phpmyadmin/(.+\.(jpg|jpeg|gif|css|png|js|ico|html|xml|txt))$ {
+    root /var/www/;
+  }
+}
+location /phpMyAdmin {
+  rewrite ^/* /phpmyadmin last;
+}
+EOF
+fi
 
 systemctl enable nginx
-systemctl start nginx
+systemctl restart nginx
+
+yum -y install python2-certbot-nginx
+
+cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
+#
+#
+# Letsencrypt automated renewal
+#
+# Every day at 01:30am
+#
+30 01 * * * root /usr/bin/certbot renew > /var/log/le-renew.log 2>&1
+#
+EOF
+
+systemctl reload crond
 
 finalcheck=`curl --write-out %{http_code} --silent --output /dev/null http://127.0.0.1/info.php|grep -c 200`
 
@@ -302,5 +465,3 @@ else
 	echo "LAMP Server install failed" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 fi
-
-# END

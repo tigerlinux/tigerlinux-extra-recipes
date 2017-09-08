@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # ZoneMinder Setup for Centos 7 64 bits
-# Release 1.0
+# Release 1.1
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -25,7 +25,6 @@ then
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-	yum -y erase firewalld
 else
 	echo "Not a centos server. Aborting!" &>>$lgfile
 	exit 0
@@ -52,6 +51,17 @@ then
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
+
+yum -y install firewalld
+systemctl enable firewalld
+systemctl restart firewalld
+firewall-cmd --zone=public --add-service=http --permanent
+firewall-cmd --zone=public --add-service=https --permanent
+firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --reload
+
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
 
 if [ `grep -c swapfile /etc/fstab` == "0" ]
 then
@@ -163,7 +173,8 @@ perl-Date-Manip perl-DBD-MySQL perl-DBI \
 perl-Email-Date-Format perl-IO-stringy perl-IO-Zlib \
 perl-MailTools perl-MIME-Lite perl-MIME-tools perl-MIME-Types \
 perl-Module-Load perl-Package-Constants \
-perl-Time-HiRes perl-TimeDate perl-YAML-Syck
+perl-Time-HiRes perl-TimeDate perl-YAML-Syck \
+mod_evasive mod_ssl
 	
 crudini --set /etc/php.ini PHP upload_max_filesize 100M
 crudini --set /etc/php.ini PHP post_max_size 100M
@@ -178,6 +189,19 @@ else
 	crudini --set /etc/php.ini PHP date.timezone "UTC"
 	export $mytimezone="Etc/UTC"
 fi
+
+cat <<EOF >/etc/httpd/conf.d/extra-security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
+EOF
+
+sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
 
 systemctl restart httpd
 systemctl enable httpd

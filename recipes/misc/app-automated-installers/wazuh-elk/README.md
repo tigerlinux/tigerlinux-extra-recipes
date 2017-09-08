@@ -13,7 +13,17 @@ After the installation is done, see your credentials inside the file "/root/wazu
 - URL: http://127.0.0.1
 - PORT: 55000
 
-Please note that this script will disable both firewalld and selinux. If you want you can install them back after this script finish its run.
+Please note that this script will disable selinux.
+
+# OPENED PORTS
+
+FirewallD allow traffic for the following ports only (input traffic):
+
+- 80 tcp (http).
+- 443 tcp (https).
+- 22 tcp (ssh).
+- 5044 tcp (logstash forwarder - encrypted).
+- 1514 tcp/udp (ossec).
 
 # GENERAL REQUIREMENTS:
 

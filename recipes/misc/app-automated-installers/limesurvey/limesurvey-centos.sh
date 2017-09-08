@@ -69,7 +69,17 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y erase firewalld
+yum -y install firewalld
+systemctl enable firewalld
+systemctl restart firewalld
+firewall-cmd --zone=public --add-service=http --permanent
+firewall-cmd --zone=public --add-service=https --permanent
+firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --reload
+
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
+
 
 if [ `grep -c swapfile /etc/fstab` == "0" ]
 then
@@ -142,14 +152,25 @@ systemctl --system daemon-reload
 systemctl enable mariadb.service
 systemctl start mariadb.service
 
-devicelist=`lsblk -do NAME|grep -v NAME`
+cloudconfigdrive=`grep cloudconfig /etc/fstab |grep -v swap|awk '{print $1}'`
+if [ $cloudconfigdrive ]
+then
+	umount $cloudconfigdrive
+	cat /etc/fstab > /etc/fstab.backup-original
+	cat /etc/fstab|egrep -v $cloudconfigdrive > /etc/fstab.pre-cloudconfigdrive
+	cat /etc/fstab.pre-cloudconfigdrive > /etc/fstab
+fi
+
+devicelist=`lsblk -do NAME,TYPE -nl -e1,2,11|grep disk|grep -v drbd|awk '{print $1}'`
 
 nxsto=''
 for blkst in $devicelist
 do
 	if [ `lsblk -do NAME,TYPE|grep -v NAME|grep disk|awk '{print $1}'|grep -v da|grep -c ^$blkst` == "1" ] \
 	&& [ `blkid |grep $blkst|grep -ci swap` == 0 ] \
-	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ]
+	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ] \
+	&& [ `pvdisplay|grep -ci /dev/$blkst` == 0 ] \
+	&& [ `df -h|grep -ci ^/dev/$blkst` == 0 ]
 	then
 		echo "Device $blkst usable" &>>$lgfile
 		nxsto=$blkst
@@ -215,18 +236,19 @@ echo "MariaDB root password: $mariadbpass" >> $credentialsfile
 echo "MariaDB listen IP: $mariadbip" >> $credentialsfile
 echo "LimeSurvey DB name: limesurveydb, DB User: limesurveydbuser, password: $lmdbpass" >> $credentialsfile
 
-yum -y install php-cli php php-gd php-mysql httpd gd \
+yum -y install php-cli php php-gd httpd gd \
 perl-Archive-Tar perl-MIME-Lite perl-MIME-tools \
 perl-Date-Manip perl-PHP-Serialization \
 perl-Archive-Zip perl-Module-Load \
-php php-mysql php-pear php-pear-DB php-mbstring \
+php php-mysqlnd php-pear php-pear-DB php-mbstring \
 php-process perl-Time-HiRes perl-Net-SFTP-Foreign \
 perl-Expect libjpeg-turbo perl-Convert-BinHex \
 perl-Date-Manip perl-DBD-MySQL perl-DBI \
 perl-Email-Date-Format perl-IO-stringy perl-IO-Zlib \
 perl-MailTools perl-MIME-Lite perl-MIME-tools perl-MIME-Types \
 perl-Module-Load perl-Package-Constants \
-perl-Time-HiRes perl-TimeDate perl-YAML-Syck php
+perl-Time-HiRes perl-TimeDate perl-YAML-Syck php \
+python-certbot-apache mod_evasive mod_ssl
 
 crudini --set /etc/php.ini PHP upload_max_filesize 60M
 crudini --set /etc/php.ini PHP post_max_size 60M
@@ -239,6 +261,19 @@ then
 else
 	crudini --set /etc/php.ini PHP date.timezone "UTC"
 fi
+
+cat <<EOF >/etc/httpd/conf.d/extra-security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
+EOF
+
+sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
 
 wget $limesurveyurl -O /root/limesurvey.tgz
 
@@ -285,6 +320,19 @@ EOF
 
 systemctl restart httpd
 systemctl enable httpd
+
+cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
+#
+#
+# Letsencrypt automated renewal
+#
+# Every day at 01:30am
+#
+30 01 * * * root /usr/bin/certbot renew > /var/log/le-renew.log 2>&1
+#
+EOF
+
+systemctl reload crond
 
 if [ `mysqladmin -h localhost -u root -p$mariadbpass ping|grep -ci alive` == "1" ]
 then

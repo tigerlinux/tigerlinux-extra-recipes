@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # Zabbix Server Automated Installation Script
-# Rel 1.1
+# Rel 1.2
 # For usage on centos7 64 bits machines.
 #
 
@@ -66,7 +66,18 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y erase firewalld
+yum -y install firewalld
+systemctl enable firewalld
+systemctl restart firewalld
+firewall-cmd --zone=public --add-service=http --permanent
+firewall-cmd --zone=public --add-service=https --permanent
+firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --zone=public --add-port=10050/tcp --permanent
+firewall-cmd --zone=public --add-port=10051/tcp --permanent
+firewall-cmd --reload
+
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
 
 if [ `grep -c swapfile /etc/fstab` == "0" ]
 then
@@ -139,14 +150,25 @@ systemctl --system daemon-reload
 systemctl enable mariadb.service
 systemctl start mariadb.service
 
-devicelist=`lsblk -do NAME|grep -v NAME`
+cloudconfigdrive=`grep cloudconfig /etc/fstab |grep -v swap|awk '{print $1}'`
+if [ $cloudconfigdrive ]
+then
+	umount $cloudconfigdrive
+	cat /etc/fstab > /etc/fstab.backup-original
+	cat /etc/fstab|egrep -v $cloudconfigdrive > /etc/fstab.pre-cloudconfigdrive
+	cat /etc/fstab.pre-cloudconfigdrive > /etc/fstab
+fi
+
+devicelist=`lsblk -do NAME,TYPE -nl -e1,2,11|grep disk|grep -v drbd|awk '{print $1}'`
 
 nxsto=''
 for blkst in $devicelist
 do
 	if [ `lsblk -do NAME,TYPE|grep -v NAME|grep disk|awk '{print $1}'|grep -v da|grep -c ^$blkst` == "1" ] \
 	&& [ `blkid |grep $blkst|grep -ci swap` == 0 ] \
-	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ]
+	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ] \
+	&& [ `pvdisplay|grep -ci /dev/$blkst` == 0 ] \
+	&& [ `df -h|grep -ci ^/dev/$blkst` == 0 ]
 	then
 		echo "Device $blkst usable" &>>$lgfile
 		nxsto=$blkst
@@ -204,9 +226,10 @@ rm -f /root/os-db.sql
 
 yum -y install zlib-devel glibc-devel curl-devel gcc automake \
 libidn-devel openssl-devel net-snmp-devel rpm-devel \
-OpenIPMI-devel net-snmp net-snmp-utils php-mysql \
+OpenIPMI-devel net-snmp net-snmp-utils php-mysqlnd \
 php-gd php-bcmath php-mbstring php-xml nmap php \
-MariaDB-devel MariaDB-client httpd mod_php php-ldap
+MariaDB-devel MariaDB-client httpd mod_php php-ldap \
+mod_evasive mod_ssl
 
 ldconfig -v >/dev/null 2>&1
 
@@ -223,6 +246,19 @@ then
 else
 	crudini --set /etc/php.ini PHP date.timezone "UTC"
 fi
+
+cat <<EOF >/etc/httpd/conf.d/extra-security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
+EOF
+
+sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
 
 rpm -ivh http://repo.zabbix.com/zabbix/3.2/rhel/7/x86_64/zabbix-release-3.2-1.el7.noarch.rpm
 
@@ -304,6 +340,8 @@ echo "ZabbixDB User: zabbixdbuser" >> $credentialsfile
 echo "ZabbixDB User Password: $zabbixdbpass" >> $credentialsfile
 echo "Zabbix admin user: admin" >> $credentialsfile
 echo "Zabbix admin user password: zabbix" >> $credentialsfile
+echo "Zabbix URL: http://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
+echo "Zabbix URL - Encrypted: https://`ip route get 1 | awk '{print $NF;exit}'`" >> $credentialsfile
 
 cat <<EOF>/var/www/html/index.html
 <HTML>

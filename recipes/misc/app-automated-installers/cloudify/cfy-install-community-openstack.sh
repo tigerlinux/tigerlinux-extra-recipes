@@ -7,7 +7,7 @@
 #
 # Cloudify Community automatic installer script.
 # Cloud version (OpenStack), Cloudify Community.
-# Release 1.1
+# Release 1.2
 #
 # This script (that should run inside an OpenStack instance) fully
 # automates the installation of Cloudify series 17.3 (community)
@@ -132,6 +132,9 @@ unknown)
 	;;
 esac
 
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
+
 if [ ! -f /opt/cfy/bin/cfy ]
 then
 	echo "ALERT !. Cloudify Client installation not found. Aborting" &>>$lgfile
@@ -203,6 +206,26 @@ cfy status  &>>$lgfile
 #
 # Perform API TEST
 apitest=`curl -X GET --header "Tenant: default_tenant" -u $admuser:$admpass "http://localhost/api/v3/status?_include=status" 2>/dev/null|jq '.status' 2>/dev/null|grep running|wc -l`
+
+yum -y install firewalld
+systemctl enable firewalld
+systemctl restart firewalld
+firewall-cmd --zone=public --add-service=http --permanent
+firewall-cmd --zone=public --add-service=https --permanent
+firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --zone=public --add-port=5672/tcp --permanent
+firewall-cmd --zone=public --add-port=8086/tcp --permanent
+firewall-cmd --zone=public --add-port=9100/tcp --permanent
+firewall-cmd --zone=public --add-port=9200/tcp --permanent
+firewall-cmd --zone=public --add-port=9999/tcp --permanent
+firewall-cmd --zone=public --add-port=53333/tcp --permanent
+firewall-cmd --zone=public --add-port=8300/tcp --permanent
+firewall-cmd --zone=public --add-port=8301/tcp --permanent
+firewall-cmd --zone=public --add-port=8500/tcp --permanent
+firewall-cmd --zone=public --add-port=15432/tcp --permanent
+firewall-cmd --zone=public --add-port=22000/tcp --permanent
+firewall-cmd --zone=public --add-port=53229/tcp --permanent
+firewall-cmd --reload
 
 if [ $apitest == "1" ]
 then

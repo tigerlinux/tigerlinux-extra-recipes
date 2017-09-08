@@ -6,12 +6,12 @@
 # https://github.com/tigerlinux
 # Docker Community Edition installation script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.3
+# Release 1.4
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 
-lgfile="/var/log/docker-ce-install.log"
+export lgfile="/var/log/docker-ce-install.log"
 echo "Start Date/Time: `date`" &>>$lgfile
 export OSFlavor='unknown'
 
@@ -25,7 +25,6 @@ then
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-	yum -y erase firewalld
 fi
 
 if [ -f /etc/debian_version ]
@@ -83,6 +82,9 @@ then
 	fi
 fi
 
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
+
 case $OSFlavor in
 centos-based)
 	amicen=`lsb_release -i|grep -ic centos`
@@ -109,6 +111,12 @@ centos-based)
 	--add-repo \
 	https://download.docker.com/linux/centos/docker-ce.repo
 
+	yum -y install firewalld
+	systemctl enable firewalld
+	systemctl restart firewalld
+	firewall-cmd --zone=public --add-service=ssh --permanent
+	firewall-cmd --reload
+
 	yum -y update --exclude=kernel*
 	yum -y install docker-ce
 
@@ -131,6 +139,14 @@ debian-based)
 	ca-certificates \
 	curl \
 	software-properties-common
+
+	apt-get -y install ufw
+	systemctl enable ufw
+	systemctl restart ufw
+	ufw --force default deny incoming
+	ufw --force default allow outgoing
+	ufw allow ssh/tcp
+	ufw --force enable
 
 	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 	add-apt-repository \

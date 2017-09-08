@@ -54,9 +54,9 @@ openstack server create my-manager \
 After the installation is completed, the credentials will be stored on the file: /root/cfy-credentials.txt.
 
 
-You'll need to create a security group with the following ports opened: 22, 80, 5672, 8086, 9100, 9200, 9999, 53333. Also, if you plan to include clustering: 8300, 8301, 8500, 15432, 22000 and 53229.
+You'll need to create a security group with the following ports opened: 22, 80, 5672, 8086, 9100, 9200, 9999, 53333. Also, if you plan to include clustering: 8300, 8301, 8500, 15432, 22000 and 53229. Our installers will open all those ports on firewalld at the end of the installation.
 
-Please note that this script will disable both firewalld and selinux. If you want you can install them back after this script finish its run.
+Please note that this script will disable selinux.
 
 
 # GENERAL REQUIREMENTS:

@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # PHPMYFAQ with Dockerized MariaDB 10.1 Installation Script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.0
+# Release 1.1
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -26,7 +26,6 @@ then
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-	yum -y erase firewalld
 fi
 
 if [ -f /etc/debian_version ]
@@ -130,7 +129,15 @@ centos-based)
 	--add-repo \
 	https://download.docker.com/linux/centos/docker-ce.repo
 
-	yum -y update
+	yum -y install firewalld
+	systemctl enable firewalld
+	systemctl restart firewalld
+	firewall-cmd --zone=public --add-service=http --permanent
+	firewall-cmd --zone=public --add-service=https --permanent
+	firewall-cmd --zone=public --add-service=ssh --permanent
+	firewall-cmd --reload
+
+	yum -y update --exclude=kernel*
 	yum -y install docker-ce
 
 	systemctl start docker
@@ -143,14 +150,15 @@ centos-based)
 	yum -y update --exclude=kernel*
 	yum -y install httpd mod_php71w php71w php71w-opcache \
 	php71w-pear php71w-pdo php71w-xml php71w-pdo_dblib \
-	php71w-mbstring php71w-mysql php71w-mcrypt php71w-fpm \
+	php71w-mbstring php71w-mysqlnd php71w-mcrypt php71w-fpm \
 	php71w-bcmath php71w-gd php71w-cli dos2unix \
 	perl-Time-HiRes libjpeg-turbo perl-Convert-BinHex \
 	perl-Date-Manip perl-DBD-MySQL perl-DBI \
 	perl-Email-Date-Format perl-IO-stringy perl-IO-Zlib \
 	perl-MailTools perl-MIME-Lite perl-MIME-tools perl-MIME-Types \
 	perl-Module-Load perl-Package-Constants \
-	perl-Time-HiRes perl-TimeDate perl-YAML-Syck
+	perl-Time-HiRes perl-TimeDate perl-YAML-Syck \
+	mod_evasive mod_ssl
 	
 	export apacheaccount="apache"
 	
@@ -167,6 +175,23 @@ centos-based)
 		crudini --set /etc/php.ini PHP date.timezone "UTC"
 		export $mytimezone="Etc/UTC"
 	fi
+	
+	cat <<EOF >/etc/httpd/conf.d/extra-security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
+<FilesMatch "^(xmlrpc\.php|wp-trackback\.php)">
+Order Deny,Allow
+Deny from all
+</FilesMatch>
+EOF
+
+	sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
+	sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
+	sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
 	
 	systemctl restart httpd
 	systemctl enable httpd
@@ -188,6 +213,16 @@ debian-based)
 	curl \
 	software-properties-common
 
+	DEBIAN_FRONTEND=noninteractive apt-get -y install ufw
+	systemctl enable ufw
+	systemctl restart ufw
+	ufw --force default deny incoming
+	ufw --force default allow outgoing
+	ufw allow ssh/tcp
+	ufw allow http/tcp
+	ufw allow https/tcp
+	ufw --force enable
+
 	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 	add-apt-repository \
 	"deb [arch=amd64] https://download.docker.com/linux/ubuntu \
@@ -205,7 +240,25 @@ debian-based)
 	DEBIAN_FRONTEND=noninteractive apt-get -y install php-curl php-gd \
 	php-mbstring php-mcrypt php-xml php-xmlrpc apache2 php \
 	libapache2-mod-php php-mysql dos2unix php-zip php-pclzip \
-	libjpeg-turbo8 
+	libjpeg-turbo8 libapache2-mod-evasive
+
+	cat <<EOF >/etc/apache2/conf-available/security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
+<FilesMatch "^(xmlrpc\.php|wp-trackback\.php)">
+Order Deny,Allow
+Deny from all
+</FilesMatch>
+EOF
+
+	a2enconf security.conf
+	a2ensite default-ssl.conf
+	a2enmod ssl
+	a2enmod evasive
 	
 	export apacheaccount="www-data"
 	
@@ -237,14 +290,28 @@ unknown)
 	;;
 esac
 
-devicelist=`lsblk -do NAME|grep -v NAME`
+echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
+sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
+
+cloudconfigdrive=`grep cloudconfig /etc/fstab |grep -v swap|awk '{print $1}'`
+if [ $cloudconfigdrive ]
+then
+	umount $cloudconfigdrive
+	cat /etc/fstab > /etc/fstab.backup-original
+	cat /etc/fstab|egrep -v $cloudconfigdrive > /etc/fstab.pre-cloudconfigdrive
+	cat /etc/fstab.pre-cloudconfigdrive > /etc/fstab
+fi
+
+devicelist=`lsblk -do NAME,TYPE -nl -e1,2,11|grep disk|grep -v drbd|awk '{print $1}'`
 
 nxsto=''
 for blkst in $devicelist
 do
 	if [ `lsblk -do NAME,TYPE|grep -v NAME|grep disk|awk '{print $1}'|grep -v da|grep -c ^$blkst` == "1" ] \
 	&& [ `blkid |grep $blkst|grep -ci swap` == 0 ] \
-	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ]
+	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ] \
+	&& [ `pvdisplay|grep -ci /dev/$blkst` == 0 ] \
+	&& [ `df -h|grep -ci ^/dev/$blkst` == 0 ]
 	then
 		echo "Device $blkst usable" &>>$lgfile
 		nxsto=$blkst

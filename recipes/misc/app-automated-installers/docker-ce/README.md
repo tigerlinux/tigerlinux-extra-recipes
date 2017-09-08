@@ -4,7 +4,15 @@ Supported Operating Systems: Centos 7, Ubuntu 16.04 lts (64 bits only)
 
 This script will install and start docker-ce from Docker-CE oficial repositories on Centos7 and Ubuntu 16.04 lts (64 bits only).
 
-Please note that this script will disable both firewalld and selinux if the machine is a Centos7. If you want you can install them back after this script finish its run.
+Please note that this script will disable both selinux if the machine is a Centos7.
+
+
+# FIREWALLD/UFW
+
+Depenging on the distro (centos7 or ubuntu1604lts) firewalld/ufw will be installed and configured. The only port to open will be:
+
+- 22 tcp (ssh).
+
 
 # GENERAL REQUIREMENTS:
 

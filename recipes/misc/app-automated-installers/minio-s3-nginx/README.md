@@ -21,9 +21,12 @@ Copy the script to any place inside the operating system, and run it as "root" (
 The script can also be used in any cloud supporting "user_data" or "bootstrap" scripts (AWS, OpenStack, Digital Ocean, etc.).
 
 
-## TCP ports exposed:
+## FIREWALLD/UFW
 
-- Minio will expose port 8080 tcp. Internally minio will use 127.0.0.1:9000, but because nginx is being used for web access to minio, the port "9000" tcp will be confined to localhost, and the port 8080 will be used for exposing the service to all networks.
+Depenging on the distro (centos7 or ubuntu1604lts) firewalld/ufw will be installed and configured. The only ports to open will be:
+
+- 22 tcp (ssh).
+- 8080 and 8443 tcp (minio-http/minio-https).
 
 
 ## What the script does ?:
@@ -35,7 +38,7 @@ The script perform the following actions in the operating system:
 - Verifies the minimum hardware requirements, and if the machine does not meet the minimums, it exits indicating the hardware does not meet the minimum requirements for this nextcloud installation design.
 - If the script find a free disk (an extra persistent, ephemeral or physical hard disk device), it assumes the user want it as storage for NextCloud. The script take all proper steps in order to fully format the drive and configure a mount point for it, on "/var/nextcloud-sto-data" (non minio-s3 version).
 - Install and configures minio-s3 (docker based), and if a free disk (an extra persistent, ephemeral or physical hard disk device) is found, it configure the storage to be used by minio-s3 as persistent storage (mounted on "/var/minio-storage").
-- It also installs and configures nginx as a front-end to minio on port 8080 (tcp).
+- It also installs and configures nginx as a front-end to minio on port 8080 (tcp) and 8443 (tcp-ssl/tls).
 - Finally, all access data (and admin credentials) are stored on the file: /root/minios3-credentials.txt.
 
 ## Running time:
