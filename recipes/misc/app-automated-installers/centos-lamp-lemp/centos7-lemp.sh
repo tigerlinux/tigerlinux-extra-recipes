@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LEMP Server Installation Script
-# Rel 1.2
+# Rel 1.3
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -453,7 +453,7 @@ EOF
 
 systemctl reload crond
 
-finalcheck=`curl --write-out %{http_code} --silent --output /dev/null http://127.0.0.1/info.php|grep -c 200`
+finalcheck=`curl --write-out %{http_code} --silent --output /dev/null http://127.0.0.1/|grep -c 200`
 
 if [ $finalcheck == "1" ]
 then
