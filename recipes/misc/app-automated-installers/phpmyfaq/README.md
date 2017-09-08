@@ -1,4 +1,4 @@
-# SEMI-AUTOMAED PHPMYFAQ INSTALLER WITH  MARIADB 10.1 (DOCKERIZED) FOR CENTOS7 / UBUNTU1604LTS
+# SEMI-AUTOMATED PHPMYFAQ INSTALLER WITH  MARIADB 10.1 (DOCKERIZED) FOR CENTOS7 / UBUNTU1604LTS
 
 This script will install latest docker-ce, download mariadb 10.1 image, configure a mariadb container, then install and configure PHPMYFAQ with Apache. The final installation step need to be performed by you using your browser, but all database and pre-installation steps will be automated by this script.
 
