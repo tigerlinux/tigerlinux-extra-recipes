@@ -15,7 +15,7 @@ VERY IMPORTANT NOTE: YOU WILL NEED THE CREDENTIALS STORED ON "/root/phpmyfaq-acc
 
 Due to the fact that PHPMYFAQ does not support any kind of silent install, you need to finish the installation using the browser and the database information stored on "/root/phpmyfaq-access-info.txt".
 
-All tasks and errors performed by this script will be stored on the file "/var/log/phpmyfaq-install.log". Monitor that file in order to see if your installations concludes OK or not. Once the installation finishes, you can enter to your phpmyfaq site with any browser in order to set your final configuration (wodpress access and your e-mail).
+All tasks and errors performed by this script will be stored on the file "/var/log/phpmyfaq-install.log". Monitor that file in order to see if your installations concludes OK or not. Once the installation finishes, you can enter to your phpmyfaq site with any browser in order to set your final configuration (admin access and your e-mail).
 
 **NOTE**: The "mariadb" dockerized service will run into a "systemd" unit called "docker-mariadb-server". You can use the standard "stop", "start", "restart", "status" commands with this unit in order to manage the mariadb service:
 

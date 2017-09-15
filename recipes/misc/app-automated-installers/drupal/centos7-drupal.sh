@@ -4,15 +4,15 @@
 # tigerlinux@gmail.com
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
-# Moodle Server Installation Script
-# Rel 1.1
+# Drupal Server Installation Script
+# Rel 1.0
 # For usage on centos7 64 bits machines.
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 OSFlavor='unknown'
-export lgfile="/var/log/moodle-server-automated-installer.log"
-export credfile="/root/moodle-server-mariadb-credentials.txt"
+export lgfile="/var/log/drupal-server-automated-installer.log"
+export credfile="/root/drupal-server-mariadb-credentials.txt"
 echo "Start Date/Time: `date`" &>>$lgfile
 export debug="no"
 
@@ -49,7 +49,7 @@ then
 fi
 
 export mariadbpass=`openssl rand -hex 10`
-export moodledbpass=`openssl rand -hex 10`
+export drupaldbpass=`openssl rand -hex 10`
 
 cpus=`lscpu -a --extended|grep -ic yes`
 instram=`free -m -t|grep -i mem:|awk '{print $2}'`
@@ -58,7 +58,7 @@ avvar=`df -k --output=avail /var|tail -n 1`
 
 if [ $cpus -lt "1" ] || [ $instram -lt "480" ] || [ $avusr -lt "5000000" ] || [ $avvar -lt "5000000" ]
 then
-	echo "Not enough hardware for a MOODLE Server. Aborting!" &>>$lgfile
+	echo "Not enough hardware for a DRUPAL Server. Aborting!" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
@@ -161,10 +161,10 @@ DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.
 DROP DATABASE IF EXISTS test;
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '$mariadbpass' WITH GRANT OPTION;
 DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
-CREATE DATABASE IF NOT EXISTS moodle DEFAULT CHARACTER SET UTF8 COLLATE utf8_unicode_ci;
-GRANT ALL ON moodle.* TO 'moodledbuser'@'%' IDENTIFIED BY '$moodledbpass';
-GRANT ALL ON moodle.* TO 'moodledbuser'@'127.0.0.1' IDENTIFIED BY '$moodledbpass';
-GRANT ALL ON moodle.* TO 'moodledbuser'@'localhost' IDENTIFIED BY '$moodledbpass';
+CREATE DATABASE IF NOT EXISTS drupaldb DEFAULT CHARACTER SET UTF8 COLLATE utf8_unicode_ci;
+GRANT ALL ON drupaldb.* TO 'drupaldbuser'@'%' IDENTIFIED BY '$drupaldbpass';
+GRANT ALL ON drupaldb.* TO 'drupaldbuser'@'127.0.0.1' IDENTIFIED BY '$drupaldbpass';
+GRANT ALL ON drupaldb.* TO 'drupaldbuser'@'localhost' IDENTIFIED BY '$drupaldbpass';
 FLUSH PRIVILEGES;
 EOF
 
@@ -185,9 +185,11 @@ echo "Database credentials:" > $credfile
 echo "User: root" >> $credfile
 echo "Password: $mariadbpass" >> $credfile
 echo "Listen IP: 127.0.0.1" >> $credfile
-echo "Moodle DB Name: moodle" >> $credfile
-echo "Moodle DB User: moodledbuser" >> $credfile
-echo "Moodle DB User Password: $moodledbpass" >> $credfile
+echo "Listen PORT: 3306" >> $credfile
+echo "DRUPAL DATABASE INFORMATION (YOU WILL NEED IT FOR DRUPAL WEB INSTALLATION):" >> $credfile
+echo "Drupal DB Name: drupaldb" >> $credfile
+echo "Drupal DB User: drupaldbuser" >> $credfile
+echo "Drupal DB User Password: $drupaldbpass" >> $credfile
 
 yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
 yum -y update --exclude=kernel*
@@ -204,8 +206,10 @@ mytimezone=`timedatectl status|grep -i "time zone:"|cut -d: -f2|awk '{print $1}'
 if [ -f /usr/share/zoneinfo/$mytimezone ]
 then
 	crudini --set /etc/php.ini PHP date.timezone "$mytimezone"
+	crudini --set /etc/php.ini Date date.timezone "$mytimezone"
 else
 	crudini --set /etc/php.ini PHP date.timezone "UTC"
+	crudini --set /etc/php.ini Date date.timezone "UTC"
 fi
 
 cat <<EOF >/etc/httpd/conf.d/extra-security.conf
@@ -237,69 +241,21 @@ EOF
 
 systemctl reload crond
 
-sed -i 's/^/#&/g' /etc/httpd/conf.d/welcome.conf
-sed -i "s/Options Indexes FollowSymLinks/Options FollowSymLinks/" /etc/httpd/conf/httpd.conf
+sed -i "s/AllowOverride none/AllowOverride all/g" /etc/httpd/conf/httpd.conf
+sed -i "s/AllowOverride None/AllowOverride all/g" /etc/httpd/conf/httpd.conf
 
-wget https://download.moodle.org/stable33/moodle-latest-33.tgz -O /root/moodle-latest-33.tgz
-tar -xzvf /root/moodle-latest-33.tgz -C /usr/local/src/
-rsync -avP /usr/local/src/moodle/ /var/www/html/
-chown -R root.root /var/www/html
-rm -rf /root/moodle-latest-33.tgz /usr/local/src/moodle
+wget https://ftp.drupal.org/files/projects/drupal-8.3.7.tar.gz -O /root/drupal-8.3.7.tar.gz
+tar -xzvf /root/drupal-8.3.7.tar.gz -C /usr/local/src/
+rsync -avP /usr/local/src/drupal*/ /var/www/html/
+rm -rf /root/drupal-8.3.7.tar.gz /usr/local/src/drupal*
+chown -R apache:apache /var/www/html
+chown root:root /var/www/html
 
-export publicip=`curl http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null`
-
-if [ $publicip ]
-then
-	export moodleip=$publicip
-else
-	
-	export moodleip=`ip route get 1 | awk '{print $NF;exit}'`
-fi
-
-echo "Moodle IP: $moodleip"
-
-echo "Moodle URL: https://$moodleip" >> $credfile
-
-cat<<EOF>/var/www/html/config.php
-<?php
-unset(\$CFG);
-global \$CFG;
-\$CFG = new stdClass();
-\$CFG->dbtype    = 'mariadb';
-\$CFG->dblibrary = 'native';
-\$CFG->dbhost    = '127.0.0.1';
-\$CFG->dbname    = 'moodle';
-\$CFG->dbuser    = 'moodledbuser';
-\$CFG->dbpass    = '$moodledbpass';
-\$CFG->prefix    = 'mdl_';
-\$CFG->dboptions = array(
-    'dbpersist' => false,
-    'dbsocket'  => false,
-    'dbport'    => '3306',
-    'dbhandlesoptions' => false,
-    'dbcollation' => 'utf8mb4_unicode_ci',
-);
-\$CFG->wwwroot   = 'https://$moodleip';
-\$CFG->dataroot  = '/var/www/moodledata';
-\$CFG->directorypermissions = 02777;
-\$CFG->admin = 'admin';
-require_once(__DIR__ . '/lib/setup.php');
-EOF
-
-mkdir /var/www/moodledata
-chown -R apache.apache /var/www/moodledata
-chmod -R 755 /var/www/moodledata
-
-chmod 644 /var/www/html/config.php
+cp /var/www/html/sites/default/default.settings.php /var/www/html/sites/default/settings.php
+chown apache:apache /var/www/html/sites/default/settings.php
 
 systemctl enable httpd.service
 systemctl restart httpd.service
-
-cat<<EOF>/etc/cron.d/moodle-crontab
-* * * * *  apache  /usr/bin/php /var/www/html/admin/cli/cron.php >/dev/null
-EOF
-
-systemctl reload crond
 
 sync
 sleep 10
@@ -308,11 +264,13 @@ finalcheck=`ss -ltn|grep -c :443`
 
 if [ $finalcheck == "1" ]
 then
-	echo "Your MOODLE Server is ready. See your database credentiales at $credfile" &>>$lgfile
+	echo "Your DRUPAL Server is ready. See your database credentiales at $credfile" &>>$lgfile
+	echo "Continue your web-based install (you will need the database credentials)" &>>$lgfile
+	echo "using your browser."
 	echo "" &>>$lgfile
 	cat $credfile &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 else
-	echo "MOODLE Server install failed" &>>$lgfile
+	echo "DRUPAL Server install failed" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 fi
