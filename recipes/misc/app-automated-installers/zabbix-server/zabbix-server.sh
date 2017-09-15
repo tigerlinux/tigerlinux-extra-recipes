@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # Zabbix Server Automated Installation Script
-# Rel 1.2
+# Rel 1.3
 # For usage on centos7 64 bits machines.
 #
 
@@ -22,7 +22,7 @@ then
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git \
 	findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux \
-	procps-ng which lvm2 sudo hostname
+	procps-ng which lvm2 sudo hostname &>>$lgfile
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -66,7 +66,7 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y install firewalld
+yum -y install firewalld &>>$lgfile
 systemctl enable firewalld
 systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
@@ -92,9 +92,9 @@ then
 	fi
 fi
 
-yum -y install epel-release
+yum -y install epel-release &>>$lgfile
 # Kill packet.net repositories if detected here.
-yum -y install yum-utils
+yum -y install yum-utils &>>$lgfile
 repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 for myrepo in $repotokill
 do
@@ -115,8 +115,8 @@ then
 	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/mariadb101-amd64.repo -O /etc/yum.repos.d/mariadb101.repo
 fi
 
-yum -y update --exclude=kernel*
-yum -y install MariaDB MariaDB-server MariaDB-client galera crudini
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile
 
 echo "" > /etc/my.cnf.d/mariadb-server-custom.cnf
 
@@ -229,7 +229,7 @@ libidn-devel openssl-devel net-snmp-devel rpm-devel \
 OpenIPMI-devel net-snmp net-snmp-utils php-mysqlnd \
 php-gd php-bcmath php-mbstring php-xml nmap php \
 MariaDB-devel MariaDB-client httpd mod_php php-ldap \
-mod_evasive mod_ssl
+mod_evasive mod_ssl &>>$lgfile
 
 ldconfig -v >/dev/null 2>&1
 
@@ -262,9 +262,9 @@ sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf
 
 rpm -ivh http://repo.zabbix.com/zabbix/3.2/rhel/7/x86_64/zabbix-release-3.2-1.el7.noarch.rpm
 
-yum -y update --exclude=kernel*
+yum -y update --exclude=kernel* &>>$lgfile
 
-yum -y install zabbix-server-mysql zabbix-web-mysql zabbix-agent
+yum -y install zabbix-server-mysql zabbix-web-mysql zabbix-agent &>>$lgfile
 
 cp /usr/share/doc/zabbix-server-mysql-3.*/create.sql.gz /root/
 gunzip /root/create.sql.gz

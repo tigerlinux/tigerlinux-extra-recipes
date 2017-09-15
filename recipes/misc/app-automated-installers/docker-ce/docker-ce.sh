@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # Docker Community Edition installation script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.4
+# Release 1.5
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -21,7 +21,7 @@ then
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils \
 	iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which \
-	lvm2 sudo hostname
+	lvm2 sudo hostname &>>$lgfile
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
@@ -45,7 +45,7 @@ EOF
 		-y install \
 		coreutils grep debianutils base-files lsb-release curl wget net-tools git \
 		iproute openssh-client sed openssl xz-utils bzip2 util-linux procps mount \
-		lvm2 hostname sudo
+		lvm2 hostname sudo &>>$lgfile
 fi
 
 kr64inst=`uname -p 2>/dev/null|grep x86_64|head -n1|wc -l`
@@ -97,7 +97,7 @@ centos-based)
 	fi
 
 	# Kill packet.net repositories if detected here.
-	yum -y install yum-utils
+	yum -y install yum-utils &>>$lgfile
 	repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 	for myrepo in $repotokill
 	do
@@ -106,12 +106,12 @@ centos-based)
 	done
 	
 	yum -y install epel-release
-	yum -y install yum-utils device-mapper-persistent-data
+	yum -y install device-mapper-persistent-data
 	yum-config-manager \
 	--add-repo \
-	https://download.docker.com/linux/centos/docker-ce.repo
+	https://download.docker.com/linux/centos/docker-ce.repo &>>$lgfile
 
-	yum -y install firewalld
+	yum -y install firewalld &>>$lgfile
 	systemctl enable firewalld
 	systemctl restart firewalld
 	firewall-cmd --zone=public --add-service=ssh --permanent
@@ -132,15 +132,15 @@ debian-based)
 		echo "End Date/Time: `date`" &>>$lgfile
 		exit 0
 	fi
-	apt-get -y update
-	apt-get -y remove docker docker-engine
+	apt-get -y update &>>$lgfile
+	apt-get -y remove docker docker-engine &>>$lgfile
 	apt-get -y install \
 	apt-transport-https \
 	ca-certificates \
 	curl \
-	software-properties-common
+	software-properties-common &>>$lgfile
 
-	apt-get -y install ufw
+	apt-get -y install ufw &>>$lgfile
 	systemctl enable ufw
 	systemctl restart ufw
 	ufw --force default deny incoming
@@ -154,8 +154,8 @@ debian-based)
 	$(lsb_release -cs) \
 	stable"
 
-	apt-get -y update
-	apt-get -y install docker-ce
+	apt-get -y update &>>$lgfile
+	apt-get -y install docker-ce &>>$lgfile
 	systemctl enable docker
 	systemctl start docker
 	systemctl restart docker

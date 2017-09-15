@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # Dockerized MariaDB Installation Script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.3
+# Release 1.4
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -22,7 +22,9 @@ if [ -f /etc/centos-release ]
 then
 	export OSFlavor='centos-based'
 	yum clean all
-	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which lvm2 sudo hostname
+	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils \
+	iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which \
+	lvm2 sudo hostname &>>$lgfile
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
@@ -32,7 +34,7 @@ if [ -f /etc/debian_version ]
 then
 	export OSFlavor='debian-based'
 	apt-get -y clean
-	apt-get -y update
+	apt-get -y update &>>$lgfile
 
 	cat<<EOF >/etc/apt/apt.conf.d/99aptget-reallyunattended
 Dpkg::Options {
@@ -47,7 +49,7 @@ EOF
 		-y install \
 		coreutils grep debianutils base-files lsb-release curl wget net-tools git \
 		iproute openssh-client sed openssl xz-utils bzip2 util-linux procps mount \
-		lvm2 hostname sudo
+		lvm2 hostname sudo &>>$lgfile
 fi
 
 kr64inst=`uname -p 2>/dev/null|grep x86_64|head -n1|wc -l`
@@ -106,7 +108,7 @@ centos-based)
 		exit 0
 	fi
 
-	yum -y install firewalld
+	yum -y install firewalld &>>$lgfile
 	systemctl enable firewalld
 	systemctl restart firewalld
 	firewall-cmd --zone=public --add-service=mysql --permanent
@@ -123,18 +125,18 @@ centos-based)
 	done
 	
 	yum -y install epel-release
-	yum -y install yum-utils device-mapper-persistent-data
+	yum -y install device-mapper-persistent-data
 	yum-config-manager \
 	--add-repo \
-	https://download.docker.com/linux/centos/docker-ce.repo
+	https://download.docker.com/linux/centos/docker-ce.repo &>>$lgfile
 
-	yum -y update
-	yum -y install docker-ce
+	yum -y update --exclude=kernel* &>>$lgfile
+	yum -y install docker-ce &>>$lgfile
 
 	systemctl start docker
 	systemctl enable docker
 	
-	yum -y install mariadb crudini
+	yum -y install mariadb crudini &>>$lgfile
 
 	;;
 debian-based)
@@ -145,15 +147,15 @@ debian-based)
 		echo "End Date/Time: `date`" &>>$lgfile
 		exit 0
 	fi
-	apt-get -y update
-	apt-get -y remove docker docker-engine
+	apt-get -y update &>>$lgfile
+	apt-get -y remove docker docker-engine &>>$lgfile
 	apt-get -y install \
 	apt-transport-https \
 	ca-certificates \
 	curl \
-	software-properties-common
+	software-properties-common &>>$lgfile
 
-	apt-get -y install ufw
+	apt-get -y install ufw &>>$lgfile
 	systemctl enable ufw
 	systemctl restart ufw
 	ufw --force default deny incoming
@@ -168,13 +170,13 @@ debian-based)
 	$(lsb_release -cs) \
 	stable"
 
-	apt-get -y update
-	apt-get -y install docker-ce
+	apt-get -y update &>>$lgfile
+	apt-get -y install docker-ce &>>$lgfile
 	systemctl enable docker
 	systemctl start docker
 	systemctl restart docker
 	
-	DEBIAN_FRONTEND=noninteractive apt-get -y install mariadb-client crudini
+	DEBIAN_FRONTEND=noninteractive apt-get -y install mariadb-client crudini &>>$lgfile
 
 	;;
 unknown)
@@ -255,20 +257,20 @@ docker run --name mariadb-engine-docker \
 -v /var/mariadb-storage/mariadb01/data:/var/lib/mysql \
 -e MYSQL_ROOT_PASSWORD="$mariadbpass" \
 -p $mariadbip:$mariadbport:3306 \
--d mariadb:10.1
+-d mariadb:10.1 &>>$lgfile
 
 sleep 60
 sync
 
-docker ps -a
-docker stop mariadb-engine-docker
+docker ps -a &>>$lgfile
+docker stop mariadb-engine-docker &>>$lgfile
 sleep 30
 sync
 
 crudini --set /var/mariadb-storage/mariadb01/conf.d/server.cnf mysqld socket /var/lib/mysql/mysql.sock
 
-docker start mariadb-engine-docker
-docker ps -a
+docker start mariadb-engine-docker &>>$lgfile
+docker ps -a &>>$lgfile
 
 echo "[client]" > /root/.my.cnf
 echo "user = "root"" >> /root/.my.cnf
@@ -296,10 +298,10 @@ EOF
 #
 systemctl daemon-reload
 #
-systemctl enable docker-mariadb-server --no-pager
-systemctl stop docker-mariadb-server --no-pager
-systemctl start docker-mariadb-server --no-pager
-systemctl status docker-mariadb-server --no-pager
+systemctl enable docker-mariadb-server --no-pager &>>$lgfile
+systemctl stop docker-mariadb-server --no-pager &>>$lgfile
+systemctl start docker-mariadb-server --no-pager &>>$lgfile
+systemctl status docker-mariadb-server --no-pager &>>$lgfile
 sync
 sleep 10
 #
@@ -317,7 +319,7 @@ if [ $phpmyadmin == "yes" ] && [ $OSFlavor == "centos-based" ]
 then
 	yum -y install phpMyAdmin httpd php php-common mod_php php-pear php-opcache \
 	php-pdo php-mbstring php-xml php-bcmath php-json php-cli php-gd php-cli \
-	mod_evasive mod_ssl
+	mod_evasive mod_ssl &>>$lgfile
 	
 	cat <<EOF >/etc/httpd/conf.d/extra-security.conf
 ServerTokens ProductOnly
@@ -371,7 +373,7 @@ fi
 if [ $phpmyadmin == "yes" ] && [ $OSFlavor == "debian-based" ]
 then
 	export DEBIAN_FRONTEND=noninteractive
-	apt-get -y install phpmyadmin php-mbstring php-gettext apache2 libapache2-mod-evasive
+	apt-get -y install phpmyadmin php-mbstring php-gettext apache2 libapache2-mod-evasive &>>$lgfile
 	
 	ufw allow http/tcp
 	ufw allow https/tcp

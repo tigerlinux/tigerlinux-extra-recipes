@@ -4,15 +4,15 @@
 # tigerlinux@gmail.com
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
-# Drupal Server Installation Script
-# Rel 1.2
+# Joomla Server Installation Script based on LEMP
+# Rel 1.0
 # For usage on centos7 64 bits machines.
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 OSFlavor='unknown'
-export lgfile="/var/log/drupal-server-automated-installer.log"
-export credfile="/root/drupal-server-mariadb-credentials.txt"
+export lgfile="/var/log/joomla-server-automated-installer.log"
+export credfile="/root/joomla-server-mariadb-credentials.txt"
 echo "Start Date/Time: `date`" &>>$lgfile
 export debug="no"
 
@@ -49,7 +49,7 @@ then
 fi
 
 export mariadbpass=`openssl rand -hex 10`
-export drupaldbpass=`openssl rand -hex 10`
+export joomladbpass=`openssl rand -hex 10`
 
 cpus=`lscpu -a --extended|grep -ic yes`
 instram=`free -m -t|grep -i mem:|awk '{print $2}'`
@@ -58,7 +58,7 @@ avvar=`df -k --output=avail /var|tail -n 1`
 
 if [ $cpus -lt "1" ] || [ $instram -lt "480" ] || [ $avusr -lt "5000000" ] || [ $avvar -lt "5000000" ]
 then
-	echo "Not enough hardware for a DRUPAL Server. Aborting!" &>>$lgfile
+	echo "Not enough hardware for a joomla Server. Aborting!" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
@@ -133,8 +133,6 @@ innodb_doublewrite = 1
 innodb_log_file_size = 100M
 innodb_flush_log_at_trx_commit = 2
 innodb_file_per_table = 1
-innodb_file_format = barracuda
-innodb_large_prefix = on
 EOF
 
 mkdir -p /etc/systemd/system/mariadb.service.d/
@@ -161,10 +159,10 @@ DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.
 DROP DATABASE IF EXISTS test;
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '$mariadbpass' WITH GRANT OPTION;
 DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
-CREATE DATABASE IF NOT EXISTS drupaldb DEFAULT CHARACTER SET UTF8 COLLATE utf8_unicode_ci;
-GRANT ALL ON drupaldb.* TO 'drupaldbuser'@'%' IDENTIFIED BY '$drupaldbpass';
-GRANT ALL ON drupaldb.* TO 'drupaldbuser'@'127.0.0.1' IDENTIFIED BY '$drupaldbpass';
-GRANT ALL ON drupaldb.* TO 'drupaldbuser'@'localhost' IDENTIFIED BY '$drupaldbpass';
+CREATE DATABASE IF NOT EXISTS joomla;
+GRANT ALL ON joomla.* TO 'joomlauser'@'%' IDENTIFIED BY '$joomladbpass';
+GRANT ALL ON joomla.* TO 'joomlauser'@'127.0.0.1' IDENTIFIED BY '$joomladbpass';
+GRANT ALL ON joomla.* TO 'joomlauser'@'localhost' IDENTIFIED BY '$joomladbpass';
 FLUSH PRIVILEGES;
 EOF
 
@@ -186,21 +184,25 @@ echo "User: root" >> $credfile
 echo "Password: $mariadbpass" >> $credfile
 echo "Listen IP: 127.0.0.1" >> $credfile
 echo "Listen PORT: 3306" >> $credfile
-echo "DRUPAL DATABASE INFORMATION (YOU WILL NEED IT FOR DRUPAL WEB INSTALLATION):" >> $credfile
-echo "Drupal DB Name: drupaldb" >> $credfile
-echo "Drupal DB User: drupaldbuser" >> $credfile
-echo "Drupal DB User Password: $drupaldbpass" >> $credfile
+echo "joomla DATABASE INFORMATION (YOU WILL NEED IT FOR joomla WEB INSTALLATION):" >> $credfile
+echo "joomla DB Name: joomla" >> $credfile
+echo "joomla DB User: joomlauser" >> $credfile
+echo "joomla DB User Password: $joomladbpass" >> $credfile
 
 yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm &>>$lgfile
 yum -y update --exclude=kernel* &>>$lgfile
 yum -y erase php-common &>>$lgfile
-yum -y install httpd mod_php71w php71w-common php71w-mbstring \
+yum -y install nginx php71w-common php71w-mbstring \
 php71w-xmlrpc php71w-soap php71w-gd php71w-xml php71w-intl \
 php71w-mysqlnd php71w-cli php71w-mcrypt php71w-ldap php71w-opcache \
-python-certbot-apache mod_evasive mod_ssl &>>$lgfile
+php71w-iconv php71w-json php71w-devel php71w-pdo \
+python-certbot-nginx php71w-fpm &>>$lgfile
 
 crudini --set /etc/php.ini PHP upload_max_filesize 100M
 crudini --set /etc/php.ini PHP post_max_size 100M
+crudini --set /etc/php.ini PHP output_buffering off
+crudini --set /etc/php.ini PHP memory_limit 512M
+crudini --set /etc/php.ini PHP max_execution_time 300
 mytimezone=`timedatectl status|grep -i "time zone:"|cut -d: -f2|awk '{print $1}'`
 
 if [ -f /usr/share/zoneinfo/$mytimezone ]
@@ -212,21 +214,133 @@ else
 	crudini --set /etc/php.ini Date date.timezone "UTC"
 fi
 
-cat <<EOF >/etc/httpd/conf.d/extra-security.conf
-ServerTokens ProductOnly
-FileETag None
-ExtendedStatus Off
-UseCanonicalName Off
-TraceEnable off
-ServerSignature Off
+mkdir -p /var/lib/php/session
+chown -R nginx:nginx /var/lib/php/session
+sed -r -i 's/apache/nginx/g' /etc/php-fpm.d/www.conf
+
+mkdir -p /var/php-uploads
+chown -R nginx:nginx /var/php-uploads
+crudini --set /etc/php.ini PHP upload_tmp_dir "/var/php-uploads"
+
+
+systemctl enable php-fpm
+systemctl restart php-fpm
+
+openssl dhparam -out /etc/nginx/dhparams.pem 2048 &>>$lgfile
+
+cat <<EOF >/etc/nginx/nginx.conf
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+include /usr/share/nginx/modules/*.conf;
+
+events {
+ worker_connections 1024;
+}
+
+http {
+ log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+ '\$status \$body_bytes_sent "\$http_referer" '
+ '"\$http_user_agent" "\$http_x_forwarded_for"';
+
+  access_log  /var/log/nginx/access.log  main;
+
+ sendfile            on;
+ tcp_nopush          on;
+ tcp_nodelay         on;
+ keepalive_timeout   65;
+ types_hash_max_size 2048;
+
+ include             /etc/nginx/mime.types;
+ default_type        application/octet-stream;
+
+ include /etc/nginx/conf.d/*.conf;
+
+ server {
+  listen       80 default_server;
+  listen       [::]:80 default_server;
+  server_name  _;
+  root /usr/share/nginx/html;
+
+  # Load configuration files for the default server block.
+  include /etc/nginx/default.d/*.conf;
+
+  location / {
+    index index.php index.html index.htm;
+    location ~ ^/.+\.php {
+     fastcgi_param  SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+     fastcgi_index  index.php;
+     fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
+     fastcgi_param PATH_INFO \$fastcgi_path_info;
+     fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
+     include fastcgi_params;
+     fastcgi_pass 127.0.0.1:9000;
+    }
+ }
+
+ error_page 404 /404.html;
+ location = /40x.html {
+ }
+
+ error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+ }
+ server {
+  listen 443 ssl http2 default_server;
+  listen [::]:443 ssl http2 default_server;
+  server_name  _;
+  root /usr/share/nginx/html;
+
+  ssl_certificate "/etc/pki/nginx/server.crt";
+  ssl_certificate_key "/etc/pki/nginx/private/server.key";
+
+  include /etc/nginx/default.d/*.conf;
+
+  location / {
+    index index.php index.html index.htm;
+    location ~ ^/.+\.php {
+      fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
+      fastcgi_index  index.php;
+      fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
+      fastcgi_param PATH_INFO \$fastcgi_path_info;
+      fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
+      include fastcgi_params;
+      fastcgi_pass 127.0.0.1:9000;
+    }
+  }
+
+  error_page 404 /404.html;
+  location = /40x.html {
+  }
+
+  error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+ }
+}
 EOF
 
-sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
-sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
-sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
+cat <<EOF>/etc/nginx/default.d/sslconfig.conf
+ssl_session_cache shared:SSL:1m;
+ssl_session_timeout  10m;
+ssl_prefer_server_ciphers on;
+ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:!DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
+ssl_dhparam /etc/nginx/dhparams.pem;
+EOF
 
-systemctl enable httpd
-systemctl restart httpd
+mkdir -p /etc/pki/nginx
+mkdir -p /etc/pki/nginx/private
+
+openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt &>>$lgfile
+
+chmod 0600 /etc/pki/nginx/private/server.key
+chown nginx.nginx /etc/pki/nginx/private/server.key
+
+
 
 cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
 #
@@ -241,37 +355,37 @@ EOF
 
 systemctl reload crond
 
-sed -i 's/^/#&/g' /etc/httpd/conf.d/welcome.conf
-sed -i "s/AllowOverride none/AllowOverride all/g" /etc/httpd/conf/httpd.conf
-sed -i "s/AllowOverride None/AllowOverride all/g" /etc/httpd/conf/httpd.conf
+mv /usr/share/nginx/html/index.html /usr/share/nginx/html/index-original-old.html
 
-wget https://ftp.drupal.org/files/projects/drupal-8.3.7.tar.gz -O /root/drupal-8.3.7.tar.gz
-tar -xzvf /root/drupal-8.3.7.tar.gz -C /usr/local/src/
-rsync -avP /usr/local/src/drupal*/ /var/www/html/
-rm -rf /root/drupal-8.3.7.tar.gz /usr/local/src/drupal*
-chown -R apache:apache /var/www/html
-chown root:root /var/www/html
+wget https://downloads.joomla.org/cms/joomla3/3-7-5/Joomla_3-7.5-Stable-Full_Package.tar.gz?format=gz \
+-O /root/Joomla_3-7.5-Stable-Full_Package.tar.gz &>>$lgfile
+tar -xzvf /root/Joomla_3-7.5-Stable-Full_Package.tar.gz -C /usr/share/nginx/html/ &>>$lgfile
+sync
+sleep 10
+rm -rf /root/Joomla_3-7.5-Stable-Full_Package.tar.gz
+> /usr/share/nginx/html/configuration.php
+chown -R nginx:nginx /usr/share/nginx/html
+chmod -R 775 /usr/share/nginx/html
+# Fix for Joomla 3.x getting stuck on database creation.
+# sed -r -i 's/ENGINE=InnoDB/ENGINE=MyIsam/g' /var/www/html/installation/sql/mysql/*.sql
 
-cp /var/www/html/sites/default/default.settings.php /var/www/html/sites/default/settings.php
-chown apache:apache /var/www/html/sites/default/settings.php
-
-systemctl enable httpd.service
-systemctl restart httpd.service
+systemctl enable nginx
+systemctl restart nginx
 
 sync
 sleep 10
 
 finalcheck=`ss -ltn|grep -c :443`
 
-if [ $finalcheck == "1" ]
+if [ $finalcheck -gt 0 ]
 then
-	echo "Your DRUPAL Server is ready. See your database credentiales at $credfile" &>>$lgfile
+	echo "Your Joomla Server is ready. See your database credentials at $credfile" &>>$lgfile
 	echo "Continue your web-based install (you will need the database credentials)" &>>$lgfile
-	echo "using your browser."
+	echo "using your browser." &>>$lgfile
 	echo "" &>>$lgfile
 	cat $credfile &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 else
-	echo "DRUPAL Server install failed" &>>$lgfile
+	echo "Joomla Server install failed" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 fi

@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # ELK Stack Server Setup for Centos 7 64 bits
 # (ELK = ElasticSearch, Logstack, Kibana)
-# Release 1.2
+# Release 1.3
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -27,7 +27,7 @@ then
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git \
 	findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux \
-	procps-ng which lvm2 sudo hostname
+	procps-ng which lvm2 sudo hostname &>>$lgfile
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
@@ -80,7 +80,7 @@ then
 fi
 
 # Kill packet.net repositories if detected here.
-yum -y install yum-utils
+yum -y install yum-utils &>>$lgfile
 repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 for myrepo in $repotokill
 do
@@ -88,12 +88,12 @@ do
 	yum-config-manager --disable $myrepo &>>$lgfile
 done
 
-yum -y install epel-release
-yum -y install yum-utils device-mapper-persistent-data unzip
+yum -y install epel-release &>>$lgfile
+yum -y install device-mapper-persistent-data unzip &>>$lgfile
 
-yum -y update --exclude=kernel*
+yum -y update --exclude=kernel* &>>$lgfile
 
-yum -y install firewalld
+yum -y install firewalld &>>$lgfile
 systemctl enable firewalld
 systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
@@ -109,24 +109,24 @@ case $javaversion in
 	--no-check-certificate \
 	--header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
 	"http://download.oracle.com/otn-pub/java/jdk/8u144-b01/090f390dda5b47b9b721c7dfaa008135/jdk-8u144-linux-x64.rpm" \
-	-O /root/jdk-8u144-linux-x64.rpm
-	yum -y localinstall /root/jdk-8u144-linux-x64.rpm
+	-O /root/jdk-8u144-linux-x64.rpm &>>$lgfile
+	yum -y localinstall /root/jdk-8u144-linux-x64.rpm &>>$lgfile
 	sync
 	rm -f /root/jdk-8u144-linux-x64.rpm
 	if [ `which java 2>/dev/null|wc -l` == "0" ]
 	then
-		yum -y install java-1.8.0-openjdk
+		yum -y install java-1.8.0-openjdk &>>$lgfile
 	fi
 	;;
 "openjdk")
-	yum -y install java-1.8.0-openjdk
+	yum -y install java-1.8.0-openjdk &>>$lgfile
 	;;
 *)
-	yum -y install java-1.8.0-openjdk
+	yum -y install java-1.8.0-openjdk &>>$lgfile
 	;;
 esac
 
-rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch &>>$lgfile
 
 cat<<EOF>/etc/yum.repos.d/elasticsearch.repo
 [elasticsearch-5.x]
@@ -142,9 +142,9 @@ EOF
 echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
 sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
 
-yum -y update --exclude=kernel*
+yum -y update --exclude=kernel* &>>$lgfile
 
-yum -y install elasticsearch
+yum -y install elasticsearch &>>$lgfile
 
 sed -r -i 's/^#network.host.*/network.host:\ 127.0.0.1/g' /etc/elasticsearch/elasticsearch.yml
 sed -r -i 's/^#http.port.*/http.port:\ 9200/g' /etc/elasticsearch/elasticsearch.yml
@@ -154,13 +154,13 @@ systemctl enable elasticsearch
 # ElasticSearch stabilization time.
 sleep 60
 
-yum -y install kibana
+yum -y install kibana &>>$lgfile
 sed -r -i 's/^#server.host.*/server.host:\ \"localhost\"/g' /etc/kibana/kibana.yml
 
 systemctl start kibana
 systemctl enable kibana
 
-yum -y install nginx httpd-tools
+yum -y install nginx httpd-tools &>>$lgfile
 
 htpasswd -b -c /etc/nginx/htpasswd.users admin $kibanaadminpass
 
@@ -243,7 +243,7 @@ EOF
 mkdir -p /etc/pki/nginx
 mkdir -p /etc/pki/nginx/private
 
-openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt
+openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt &>>$lgfile
 
 chmod 0600 /etc/pki/nginx/private/server.key
 chown nginx.nginx /etc/pki/nginx/private/server.key
@@ -251,32 +251,32 @@ chown nginx.nginx /etc/pki/nginx/private/server.key
 systemctl restart nginx
 systemctl enable nginx
 
-yum -y install logstash
+yum -y install logstash &>>$lgfile
 
 mkdir /etc/pki/CA-ELK
 
-wget https://storage.googleapis.com/kubernetes-release/easy-rsa/easy-rsa.tar.gz -O /root/easy-rsa.tar.gz
-tar -xzvf /root/easy-rsa.tar.gz -C /root/
+wget https://storage.googleapis.com/kubernetes-release/easy-rsa/easy-rsa.tar.gz -O /root/easy-rsa.tar.gz &>>$lgfile
+tar -xzvf /root/easy-rsa.tar.gz -C /root/ &>>$lgfile
 cd /root/easy-rsa-master/easyrsa3/
-./easyrsa init-pki
-./easyrsa --batch "--req-cn=`ip route get 1 | awk '{print $NF;exit}'`@`date +%s`" build-ca nopass
-./easyrsa --subject-alt-name="IP:`ip route get 1 | awk '{print $NF;exit}'`,IP:127.0.0.1,DNS:`hostname`" build-server-full server nopass
+./easyrsa init-pki &>>$lgfile
+./easyrsa --batch "--req-cn=`ip route get 1 | awk '{print $NF;exit}'`@`date +%s`" build-ca nopass &>>$lgfile
+./easyrsa --subject-alt-name="IP:`ip route get 1 | awk '{print $NF;exit}'`,IP:127.0.0.1,DNS:`hostname`" build-server-full server nopass &>>$lgfile
 for i in {pki/ca.crt,pki/issued/server.crt,pki/private/server.key}; do cp $i /etc/pki/CA-ELK; done
 # Server
-./easyrsa --batch gen-req client1 nopass
-./easyrsa --batch sign-req client client1
+./easyrsa --batch gen-req client1 nopass &>>$lgfile
+./easyrsa --batch sign-req client client1 &>>$lgfile
 cp ./pki/issued/client1.crt ./pki/private/client1.key /etc/pki/CA-ELK/
-openssl x509 -outform PEM -in /etc/pki/CA-ELK/server.crt -out /etc/pki/CA-ELK/server.pem
+openssl x509 -outform PEM -in /etc/pki/CA-ELK/server.crt -out /etc/pki/CA-ELK/server.pem &>>$lgfile
 chmod 0600 /etc/pki/CA-ELK/server.key
 chmod 0600 /etc/pki/CA-ELK/client1.key
-openssl x509 -outform PEM -in /etc/pki/CA-ELK/client1.crt -out /etc/pki/CA-ELK/client1.pem
+openssl x509 -outform PEM -in /etc/pki/CA-ELK/client1.crt -out /etc/pki/CA-ELK/client1.pem &>>$lgfile
 chown logstash. /etc/pki/CA-ELK/server.key
 chmod 644 /etc/pki/CA-ELK/ca.crt
 chmod 644 /etc/pki/CA-ELK/server.pem
 rm -f /root/easy-rsa.tar.gz
 cp /etc/pki/CA-ELK/ca.crt /etc/pki/ca-trust/source/anchors/
 cd /
-update-ca-trust
+update-ca-trust &>>$lgfile
 
 
 cat<<EOF >/etc/logstash/conf.d/02-beats-input.conf
@@ -329,7 +329,7 @@ systemctl enable logstash
 sleep 60
 sync
 
-yum -y install filebeat
+yum -y install filebeat &>>$lgfile
 
 cat<<EOF >/etc/filebeat/filebeat.yml
 filebeat.prospectors:

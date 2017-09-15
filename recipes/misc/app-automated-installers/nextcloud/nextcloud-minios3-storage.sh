@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # NextCloud with MinioS3 Automated Installation Script
-# Rel 1.3
+# Rel 1.4
 # For usage on centos7 64 bits machines.
 #
 
@@ -18,7 +18,9 @@ if [ -f /etc/centos-release ]
 then
 	OSFlavor='centos-based'
 	yum clean all
-	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which lvm2 sudo hostname
+	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils \
+	iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng \
+	which lvm2 sudo hostname &>>$lgfile
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -58,7 +60,7 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y install firewalld
+yum -y install firewalld &>>$lgfile
 systemctl enable firewalld
 systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
@@ -84,7 +86,7 @@ then
 fi
 
 # Kill packet.net repositories if detected here.
-yum -y install yum-utils
+yum -y install yum-utils &>>$lgfile
 repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 for myrepo in $repotokill
 do
@@ -138,7 +140,7 @@ fi
 mkdir -p /var/minio-storage/minioserver01/data
 mkdir -p /var/minio-storage/minioserver01/config
 
-yum -y install epel-release yum-utils device-mapper-persistent-data
+yum -y install epel-release device-mapper-persistent-data &>>$lgfile
 
 cat <<EOF >/etc/yum.repos.d/mariadb101.repo
 [mariadb]
@@ -152,8 +154,8 @@ yum-config-manager \
 --add-repo \
 https://download.docker.com/linux/centos/docker-ce.repo
 
-yum -y update --exclude=kernel*
-yum -y install docker-ce
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y install docker-ce &>>$lgfile
 
 systemctl start docker
 systemctl enable docker
@@ -169,7 +171,7 @@ docker run \
 -p 127.0.0.1:9000:9000 \
 -v /var/minio-storage/minioserver01/data:/export \
 -v /var/minio-storage/minioserver01/config:/root/.minio \
-minio/minio server /export
+minio/minio server /export &>>$lgfile
 
 echo "Waiting 10 seconds" &>>$lgfile
 sync
@@ -182,7 +184,7 @@ then
 	exit 0
 fi
 
-yum -y install nginx
+yum -y install nginx &>>$lgfile
 
 cat /etc/nginx/nginx.conf >> /etc/nginx/nginx.conf.original
 
@@ -223,8 +225,8 @@ EOF
 systemctl restart nginx
 systemctl enable nginx
 
-yum -y install wget jq
-wget https://dl.minio.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/miniocli
+yum -y install wget jq &>>$lgfile
+wget https://dl.minio.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/miniocli &>>$lgfile
 chmod 755 /usr/local/bin/miniocli
 
 if [ -f /usr/local/bin/miniocli ]
@@ -233,7 +235,7 @@ then
 	http://127.0.0.1:9000 \
 	$minioaccesskey \
 	$miniosecret \
-	S3v4
+	S3v4 &>>$lgfile
 	miniocli mb minioserver01/nextcloud
 else
 	echo "Minio client failed to install. Just an alert!" &>>$lgfile
@@ -242,8 +244,8 @@ fi
 export minioaccess=$minioaccesskey
 export miniosecret=$miniosecret
 
-yum -y update --exclude=kernel*
-yum -y install MariaDB MariaDB-server MariaDB-client galera crudini
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile
 
 cat <<EOF >/etc/my.cnf.d/server-nextcloud.cnf
 [mysqld]
@@ -301,12 +303,13 @@ chmod 0600 /root/.my.cnf
 
 rm -f /root/os-db.sql
 
-yum -y install centos-release-scl
-yum -y update --exclude=kernel*
-yum -y erase php-common
+yum -y install centos-release-scl &>>$lgfile
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y erase php-common &>>$lgfile
 yum -y install httpd rh-php56 rh-php56-php rh-php56-php-gd rh-php56-php-mbstring \
 rh-php56-php-mysqlnd rh-php56-php-ldap rh-php56-php-pecl-memcache \
-rh-php56-php-pdo rh-php56-php-xml rh-php56-php-cli redis sclo-php56-php-pecl-redis
+rh-php56-php-pdo rh-php56-php-xml rh-php56-php-cli redis \
+sclo-php56-php-pecl-redis &>>$lgfile
 
 rm -f /etc/httpd/conf.d/php.conf
 rm -f /etc/httpd/conf.modules.d/10-php.conf
@@ -333,7 +336,7 @@ else
 	crudini --set /etc/php.ini PHP date.timezone "UTC"
 fi
 
-yum -y install mod_evasive mod_ssl
+yum -y install mod_evasive mod_ssl &>>$lgfile
 
 cat <<EOF >/etc/httpd/conf.d/extra-security.conf
 ServerTokens ProductOnly
@@ -352,9 +355,9 @@ sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf
 systemctl enable redis
 systemctl start redis
 
-wget https://download.nextcloud.com/server/releases/latest-11.zip -O /root/latest-11.zip
-yum -y install unzip
-unzip /root/latest-11.zip -d /var/www/html/
+wget https://download.nextcloud.com/server/releases/latest-11.zip -O /root/latest-11.zip &>>$lgfile
+yum -y install unzip &>>$lgfile
+unzip /root/latest-11.zip -d /var/www/html/ &>>$lgfile
 rm -f /root/latest-11.zip
 
 cat <<EOF >/var/www/html/index.html
@@ -387,7 +390,7 @@ sudo -u apache /usr/local/bin/php \
 --database-pass "$mariadbpass" \
 --admin-user "admin" \
 --admin-pass "$nextcloudadminpass" \
---data-dir="/var/nextcloud-sto-data"
+--data-dir="/var/nextcloud-sto-data" &>>$lgfile
 
 cat<<EOF >/root/nextcloud-credentials.txt
 Nextcloud admin user: admin

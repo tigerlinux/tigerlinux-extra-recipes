@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # PHPMYFAQ with Dockerized MariaDB 10.1 Installation Script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.1
+# Release 1.2
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -22,7 +22,7 @@ then
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git \
 	findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux \
-	procps-ng which lvm2 sudo hostname rsync
+	procps-ng which lvm2 sudo hostname rsync &>>$lgfile
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
@@ -32,7 +32,7 @@ if [ -f /etc/debian_version ]
 then
 	OSFlavor='debian-based'
 	apt-get -y clean
-	apt-get -y update
+	apt-get -y update &>>$lgfile
 
 	cat<<EOF >/etc/apt/apt.conf.d/99aptget-reallyunattended
 Dpkg::Options {
@@ -47,7 +47,7 @@ EOF
 		-y install \
 		coreutils grep debianutils base-files lsb-release curl wget net-tools git \
 		iproute openssh-client sed openssl xz-utils bzip2 util-linux procps mount \
-		lvm2 hostname sudo rsync
+		lvm2 hostname sudo rsync &>>$lgfile
 fi
 
 export mariadbport='3306'
@@ -115,7 +115,7 @@ centos-based)
 	fi
 
 	# Kill packet.net repositories if detected here.
-	yum -y install yum-utils
+	yum -y install yum-utils &>>$lgfile
 	repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 	for myrepo in $repotokill
 	do
@@ -123,13 +123,13 @@ centos-based)
 		yum-config-manager --disable $myrepo &>>$lgfile
 	done
 	
-	yum -y install epel-release
+	yum -y install epel-release &>>$lgfile
 	yum -y install yum-utils device-mapper-persistent-data
 	yum-config-manager \
 	--add-repo \
-	https://download.docker.com/linux/centos/docker-ce.repo
+	https://download.docker.com/linux/centos/docker-ce.repo &>>$lgfile
 
-	yum -y install firewalld
+	yum -y install firewalld &>>$lgfile
 	systemctl enable firewalld
 	systemctl restart firewalld
 	firewall-cmd --zone=public --add-service=http --permanent
@@ -137,17 +137,17 @@ centos-based)
 	firewall-cmd --zone=public --add-service=ssh --permanent
 	firewall-cmd --reload
 
-	yum -y update --exclude=kernel*
-	yum -y install docker-ce
+	yum -y update --exclude=kernel* &>>$lgfile
+	yum -y install docker-ce &>>$lgfile
 
 	systemctl start docker
 	systemctl enable docker
 	
-	yum -y install mariadb crudini
+	yum -y install mariadb crudini &>>$lgfile
 	
-	yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-	yum -y erase php*
-	yum -y update --exclude=kernel*
+	yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm &>>$lgfile
+	yum -y erase php* &>>$lgfile
+	yum -y update --exclude=kernel* &>>$lgfile
 	yum -y install httpd mod_php71w php71w php71w-opcache \
 	php71w-pear php71w-pdo php71w-xml php71w-pdo_dblib \
 	php71w-mbstring php71w-mysqlnd php71w-mcrypt php71w-fpm \
@@ -158,7 +158,7 @@ centos-based)
 	perl-MailTools perl-MIME-Lite perl-MIME-tools perl-MIME-Types \
 	perl-Module-Load perl-Package-Constants \
 	perl-Time-HiRes perl-TimeDate perl-YAML-Syck \
-	mod_evasive mod_ssl
+	mod_evasive mod_ssl &>>$lgfile
 	
 	export apacheaccount="apache"
 	
@@ -205,15 +205,15 @@ debian-based)
 		echo "End Date/Time: `date`" &>>$lgfile
 		exit 0
 	fi
-	apt-get -y update
+	apt-get -y update &>>$lgfile
 	apt-get -y remove docker docker-engine
 	apt-get -y install \
 	apt-transport-https \
 	ca-certificates \
 	curl \
-	software-properties-common
+	software-properties-common &>>$lgfile
 
-	DEBIAN_FRONTEND=noninteractive apt-get -y install ufw
+	DEBIAN_FRONTEND=noninteractive apt-get -y install ufw &>>$lgfile
 	systemctl enable ufw
 	systemctl restart ufw
 	ufw --force default deny incoming
@@ -229,18 +229,18 @@ debian-based)
 	$(lsb_release -cs) \
 	stable"
 
-	apt-get -y update
-	apt-get -y install docker-ce
+	apt-get -y update &>>$lgfile
+	apt-get -y install docker-ce &>>$lgfile
 	systemctl enable docker
 	systemctl start docker
 	systemctl restart docker
 	
-	DEBIAN_FRONTEND=noninteractive apt-get -y install mariadb-client crudini
+	DEBIAN_FRONTEND=noninteractive apt-get -y install mariadb-client crudini &>>$lgfile
 	
 	DEBIAN_FRONTEND=noninteractive apt-get -y install php-curl php-gd \
 	php-mbstring php-mcrypt php-xml php-xmlrpc apache2 php \
 	libapache2-mod-php php-mysql dos2unix php-zip php-pclzip \
-	libjpeg-turbo8 libapache2-mod-evasive
+	libjpeg-turbo8 libapache2-mod-evasive &>>$lgfile
 
 	cat <<EOF >/etc/apache2/conf-available/security.conf
 ServerTokens ProductOnly
@@ -357,19 +357,19 @@ tmp_table_size = 32M
 max_allowed_packet = 1024M
 EOF
 
-docker pull mariadb:10.1
+docker pull mariadb:10.1 &>>$lgfile
 
 docker run --name mariadb-engine-docker \
 -v /var/phpmyfaq-storage/mariadb01/conf.d:/etc/mysql/conf.d \
 -v /var/phpmyfaq-storage/mariadb01/data:/var/lib/mysql \
 -e MYSQL_ROOT_PASSWORD="$mariadbpass" \
 -p $mariadbip:$mariadbport:3306 \
--d mariadb:10.1
+-d mariadb:10.1 &>>$lgfile
 
 sleep 20
 
-docker ps -a
-docker stop mariadb-engine-docker
+docker ps -a &>>$lgfile
+docker stop mariadb-engine-docker &>>$lgfile
 
 cat<<EOF >/var/phpmyfaq-storage/mariadb01/conf.d/server.cnf
 [mysqld]
@@ -385,8 +385,8 @@ tmp_table_size = 32M
 max_allowed_packet = 1024M
 EOF
 
-docker start mariadb-engine-docker
-docker ps -a
+docker start mariadb-engine-docker &>>$lgfile
+docker ps -a &>>$lgfile
 
 echo "[client]" > /root/.my.cnf
 echo "user = "root"" >> /root/.my.cnf
@@ -417,7 +417,7 @@ systemctl daemon-reload
 systemctl enable docker-mariadb-server --no-pager
 systemctl stop docker-mariadb-server --no-pager
 systemctl start docker-mariadb-server --no-pager
-systemctl status docker-mariadb-server --no-pager
+systemctl status docker-mariadb-server --no-pager &>>$lgfile
 sync
 sleep 10
 #
@@ -437,8 +437,8 @@ mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep passw
 sync
 rm -f /root/os-db.sql
 
-wget http://download.phpmyfaq.de/phpMyFAQ-2.9.8.tar.gz -O /root/phpMyFAQ-2.9.8.tar.gz
-tar -xzvf /root/phpMyFAQ-2.9.8.tar.gz -C /usr/local/src/
+wget http://download.phpmyfaq.de/phpMyFAQ-2.9.8.tar.gz -O /root/phpMyFAQ-2.9.8.tar.gz &>>$lgfile
+tar -xzvf /root/phpMyFAQ-2.9.8.tar.gz -C /usr/local/src/ &>>$lgfile
 rsync -avP /usr/local/src/phpmyfaq/ /var/www/html/
 chown -R root.root /var/www/html/*
 rm -rf /root/phpMyFAQ-2.9.8.tar.gz /usr/local/src/phpmyfaq

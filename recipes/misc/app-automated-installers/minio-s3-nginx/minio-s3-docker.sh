@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # Minio-S3 installation script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.2
+# Release 1.4
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -31,7 +31,9 @@ if [ -f /etc/centos-release ]
 then
 	OSFlavor='centos-based'
 	yum clean all
-	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which lvm2 sudo hostname
+	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils \
+	iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which \
+	lvm2 sudo hostname &>>$lgfile
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
@@ -42,7 +44,7 @@ if [ -f /etc/debian_version ]
 then
 	OSFlavor='debian-based'
 	apt-get -y clean
-	apt-get -y update
+	apt-get -y update &>>$lgfile
 	cat<<EOF >/etc/apt/apt.conf.d/99aptget-reallyunattended
 Dpkg::Options {
    "--force-confdef";
@@ -56,7 +58,7 @@ EOF
 		-y install \
 		coreutils grep debianutils base-files lsb-release curl wget net-tools git \
 		iproute openssh-client sed openssl xz-utils bzip2 util-linux procps mount \
-		lvm2 hostname sudo
+		lvm2 hostname sudo &>>$lgfile
 fi
 
 kr64inst=`uname -p 2>/dev/null|grep x86_64|head -n1|wc -l`
@@ -118,15 +120,15 @@ centos-based)
 		yum-config-manager --disable $myrepo &>>$lgfile
 	done
 	
-	yum -y install epel-release
-	yum -y install yum-utils device-mapper-persistent-data
+	yum -y install epel-release &>>$lgfile
+	yum -y install device-mapper-persistent-data &>>$lgfile
 	yum-config-manager \
 	--add-repo \
-	https://download.docker.com/linux/centos/docker-ce.repo
+	https://download.docker.com/linux/centos/docker-ce.repo &>>$lgfile
 
-	yum -y update --exclude=kernel*
+	yum -y update --exclude=kernel* &>>$lgfile
 
-	yum -y install firewalld
+	yum -y install firewalld &>>$lgfile
 	systemctl enable firewalld
 	systemctl restart firewalld
 	firewall-cmd --zone=public --add-service=ssh --permanent
@@ -134,16 +136,16 @@ centos-based)
 	firewall-cmd --zone=public --add-port=$nginxsslport/tcp --permanent
 	firewall-cmd --reload
 
-	yum -y install docker-ce
+	yum -y install docker-ce &>>$lgfile
 
 	systemctl start docker
 	systemctl enable docker
 
-	yum -y install nginx
+	yum -y install nginx &>>$lgfile
 
 	cat /etc/nginx/nginx.conf >> /etc/nginx/nginx.conf.original
 	
-	openssl dhparam -out /etc/nginx/dhparams.pem 2048
+	openssl dhparam -out /etc/nginx/dhparams.pem 2048 &>>$lgfile
 
 	cat <<EOF >/etc/nginx/nginx.conf
 include /usr/share/nginx/modules/*.conf;
@@ -205,7 +207,7 @@ EOF
 	mkdir -p /etc/pki/nginx
 	mkdir -p /etc/pki/nginx/private
 
-	openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt
+	openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt &>>$lgfile
 
 	chmod 0600 /etc/pki/nginx/private/server.key
 	chown nginx.nginx /etc/pki/nginx/private/server.key
@@ -213,7 +215,7 @@ EOF
 	systemctl restart nginx
 	systemctl enable nginx
 
-	yum -y install jq
+	yum -y install jq &>>$lgfile
 
 	;;
 debian-based)
@@ -224,15 +226,15 @@ debian-based)
 		echo "End Date/Time: `date`" &>>$lgfile
 		exit 0
 	fi
-	apt-get -y update
-	apt-get -y remove docker docker-engine
+	apt-get -y update &>>$lgfile
+	apt-get -y remove docker docker-engine &>>$lgfile
 	apt-get -y install \
 	apt-transport-https \
 	ca-certificates \
 	curl \
-	software-properties-common
+	software-properties-common &>>$lgfile
 
-	apt-get -y install ufw
+	apt-get -y install ufw &>>$lgfile
 	systemctl enable ufw
 	systemctl restart ufw
 	ufw --force default deny incoming
@@ -248,15 +250,15 @@ debian-based)
 	$(lsb_release -cs) \
 	stable"
 
-	apt-get -y update
-	apt-get -y install docker-ce
+	apt-get -y update &>>$lgfile
+	apt-get -y install docker-ce &>>$lgfile
 	systemctl enable docker
 	systemctl start docker
 	systemctl restart docker
 	
-	apt-get -y install jq
+	apt-get -y install jq &>>$lgfile
 	
-	DEBIAN_FRONTEND=noninteractive apt-get -y install nginx-full
+	DEBIAN_FRONTEND=noninteractive apt-get -y install nginx-full &>>$lgfile
 	cat /etc/nginx/sites-available/default > /etc/nginx/sites-available/default-original
 	
 	openssl dhparam -out /etc/nginx/dhparams.pem 2048
@@ -305,7 +307,7 @@ EOF
 	mkdir -p /etc/pki/nginx
 	mkdir -p /etc/pki/nginx/private
 
-	openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt
+	openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt &>>$lgfile
 
 	chmod 0600 /etc/pki/nginx/private/server.key
 	chown www-data.www-data /etc/pki/nginx/private/server.key
@@ -378,7 +380,7 @@ docker run \
 -p 127.0.0.1:9000:9000 \
 -v /var/minio-storage/minioserver01/data:/export \
 -v /var/minio-storage/minioserver01/config:/root/.minio \
-minio/minio server /export
+minio/minio server /export &>>$lgfile
 
 echo "Waiting 10 seconds for Minio Server to start" &>>$lgfile
 sync
@@ -400,7 +402,7 @@ then
 	http://127.0.0.1:9000 \
 	`cat /var/minio-storage/minioserver01/config/config.json |jq '.credential.accessKey'|cut -d\" -f2` \
 	`cat /var/minio-storage/minioserver01/config/config.json |jq '.credential.secretKey'|cut -d\" -f2` \
-	S3v4
+	S3v4 &>>$lgfile
 else
 	echo "Minio client failed to install. Just an alert!" &>>$lgfile
 fi

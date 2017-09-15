@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LEMP Server Installation Script
-# Rel 1.3
+# Rel 1.4
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -31,7 +31,7 @@ then
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools \
 	git findutils iproute grep openssh sed gawk openssl which xz bzip2 \
-	util-linux procps-ng which lvm2 sudo hostname
+	util-linux procps-ng which lvm2 sudo hostname &>>$lgfile
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -74,7 +74,7 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y install firewalld
+yum -y install firewalld &>>$lgfile
 systemctl enable firewalld
 systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
@@ -99,7 +99,7 @@ then
 fi
 
 # Kill packet.net repositories if detected here.
-yum -y install yum-utils
+yum -y install yum-utils &>>$lgfile
 repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 for myrepo in $repotokill
 do
@@ -109,7 +109,7 @@ done
 
 
 yum -y install epel-release
-yum -y install yum-utils device-mapper-persistent-data
+yum -y install device-mapper-persistent-data
 
 cat <<EOF >/etc/yum.repos.d/mariadb101.repo
 [mariadb]
@@ -124,8 +124,8 @@ then
 	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/mariadb101-amd64.repo -O /etc/yum.repos.d/mariadb101.repo
 fi
 
-yum -y update --exclude=kernel*
-yum -y install MariaDB MariaDB-server MariaDB-client galera crudini
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile
 
 cat <<EOF >/etc/my.cnf.d/server-lemp.cnf
 [mysqld]
@@ -189,34 +189,27 @@ echo "Listen IP: $mariadbip" >> $credfile
 
 case $phpversion in
 56)
-	yum -y install centos-release-scl
-	yum -y update --exclude=kernel*
+	yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+	yum -y update --exclude=kernel* &>>$lgfile
 	yum -y erase php-common
-	yum -y install nginx rh-php56 rh-php56-php-fpm rh-php56-php-gd rh-php56-php-mbstring \
-	rh-php56-php-mysqlnd rh-php56-php-ldap rh-php56-php-pecl-memcache \
-	rh-php56-php-pdo rh-php56-php-xml rh-php56-php-cli 
-
-	rm -f /etc/php.ini
-	cat /opt/rh/rh-php56/enable > /etc/profile.d/php56-profile.conf
-	source /etc/profile.d/php56-profile.conf
-	ln -sf `which php` /usr/local/bin/php
-	bash /opt/rh/rh-php56/register
-	scl enable rh-php56 bash
-	ln -sf 	/etc/opt/rh/rh-php56/php.ini /etc/php.ini
+	yum -y install nginx php56w php56w-opcache php56w-pear \
+	php56w-pdo php56w-xml php56w-pdo_dblib php56w-mbstring \
+	php56w-mysqlnd php56w-mcrypt php56w-fpm php56w-bcmath \
+	php56w-gd php56w-cli php56w-json &>>$lgfile
 	;;
 71)
 	yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-	yum -y update --exclude=kernel*
+	yum -y update --exclude=kernel* &>>$lgfile
 	yum -y erase php-common
 	yum -y install nginx php71w php71w-opcache php71w-pear \
 	php71w-pdo php71w-xml php71w-pdo_dblib php71w-mbstring \
 	php71w-mysqlnd php71w-mcrypt php71w-fpm php71w-bcmath \
-	php71w-gd php71w-cli php71w-json
+	php71w-gd php71w-cli php71w-json &>>$lgfile
 	;;
 *)
-	yum -y update --exclude=kernel*
+	yum -y update --exclude=kernel* &>>$lgfile
 	yum -y install nginx php-common php-fpm php-pear php-opcache php-pdo \
-	php-mbstring php-mysqlnd php-xml php-bcmath php-json php-cli php-gd
+	php-mbstring php-mysqlnd php-xml php-bcmath php-json php-cli php-gd &>>$lgfile
 	;;
 esac
 
@@ -230,12 +223,15 @@ then
 else
 	crudini --set /etc/php.ini PHP date.timezone "UTC"
 fi
-systemctl enable php-fpm >/dev/null 2>&1
-systemctl start php-fpm >/dev/null 2>&1
-systemctl enable rh-php56-php-fpm >/dev/null 2>&1
-systemctl start rh-php56-php-fpm >/dev/null 2>&1
 
-openssl dhparam -out /etc/nginx/dhparams.pem 2048
+mkdir -p /var/lib/php/session
+chown -R nginx:nginx /var/lib/php/session
+sed -r -i 's/apache/nginx/g' /etc/php-fpm.d/www.conf
+
+systemctl enable php-fpm
+systemctl restart php-fpm
+
+openssl dhparam -out /etc/nginx/dhparams.pem 2048 &>>$lgfile
 
 cat <<EOF >/etc/nginx/nginx.conf
 user nginx;
@@ -277,6 +273,7 @@ http {
   include /etc/nginx/default.d/*.conf;
 
   location / {
+    index index.php index.html index.htm;
     location ~ ^/.+\.php {
     fastcgi_param  SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
     fastcgi_index  index.php;
@@ -308,6 +305,7 @@ http {
   include /etc/nginx/default.d/*.conf;
 
   location / {
+    index index.php index.html index.htm;
     location ~ ^/.+\.php {
       fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
       fastcgi_index  index.php;
@@ -342,7 +340,7 @@ EOF
 mkdir -p /etc/pki/nginx
 mkdir -p /etc/pki/nginx/private
 
-openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt
+openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt &>>$lgfile
 
 chmod 0600 /etc/pki/nginx/private/server.key
 chown nginx.nginx /etc/pki/nginx/private/server.key
@@ -438,7 +436,7 @@ fi
 systemctl enable nginx
 systemctl restart nginx
 
-yum -y install python2-certbot-nginx
+yum -y install python2-certbot-nginx &>>$lgfile
 
 cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
 #

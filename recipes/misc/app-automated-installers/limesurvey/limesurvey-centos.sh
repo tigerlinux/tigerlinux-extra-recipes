@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LimeSurvey with MariaDB 10.1 DB Backend installation script
-# Rel 1.0
+# Rel 1.2
 # For usage on centos7 64 bits machines.
 #
 
@@ -23,7 +23,7 @@ then
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git \
 	findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux \
-	procps-ng which lvm2 sudo hostname
+	procps-ng which lvm2 sudo hostname &>>$lgfile
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -69,7 +69,7 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y install firewalld
+yum -y install firewalld &>>$lgfile
 systemctl enable firewalld
 systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
@@ -94,9 +94,9 @@ then
 	fi
 fi
 
-yum -y install epel-release
+yum -y install epel-release &>>$lgfile
 # Kill packet.net repositories if detected here.
-yum -y install yum-utils
+yum -y install yum-utils &>>$lgfile
 repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 for myrepo in $repotokill
 do
@@ -117,8 +117,8 @@ then
 	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/mariadb101-amd64.repo -O /etc/yum.repos.d/mariadb101.repo
 fi
 
-yum -y update --exclude=kernel*
-yum -y install MariaDB MariaDB-server MariaDB-client galera crudini
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile
 
 echo "" > /etc/my.cnf.d/mariadb-server-custom.cnf
 
@@ -248,7 +248,7 @@ perl-Email-Date-Format perl-IO-stringy perl-IO-Zlib \
 perl-MailTools perl-MIME-Lite perl-MIME-tools perl-MIME-Types \
 perl-Module-Load perl-Package-Constants \
 perl-Time-HiRes perl-TimeDate perl-YAML-Syck php \
-python-certbot-apache mod_evasive mod_ssl
+python-certbot-apache mod_evasive mod_ssl &>>$lgfile
 
 crudini --set /etc/php.ini PHP upload_max_filesize 60M
 crudini --set /etc/php.ini PHP post_max_size 60M
@@ -275,9 +275,9 @@ sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.
 sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
 sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
 
-wget $limesurveyurl -O /root/limesurvey.tgz
+wget $limesurveyurl -O /root/limesurvey.tgz &>>$lgfile
 
-tar -xzvf /root/limesurvey.tgz -C /var/www/html/
+tar -xzvf /root/limesurvey.tgz -C /var/www/html/ &>>$lgfile
 chown -R root.root /var/www/html/limesurvey
 chown -R apache.apache /var/www/html/limesurvey/application/config/
 chown -R apache.apache /var/www/html/limesurvey/upload/

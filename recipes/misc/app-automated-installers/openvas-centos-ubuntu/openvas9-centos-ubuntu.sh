@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # OpenVAS-9 install.
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.0
+# Release 1.2
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -22,18 +22,18 @@ then
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git \
 	findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux \
-	procps-ng which lvm2 sudo hostname
+	procps-ng which lvm2 sudo hostname &>>$lgfile
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-	yum -y erase firewalld
+	yum -y erase firewalld &>>$lgfile
 fi
 
 if [ -f /etc/debian_version ]
 then
 	OSFlavor='debian-based'
 	apt-get -y clean
-	apt-get -y update
+	apt-get -y update &>>$lgfile
 	cat<<EOF >/etc/apt/apt.conf.d/99aptget-reallyunattended
 Dpkg::Options {
    "--force-confdef";
@@ -47,7 +47,7 @@ EOF
 		-y install \
 		coreutils grep debianutils base-files lsb-release curl wget net-tools git \
 		iproute openssh-client sed openssl xz-utils bzip2 util-linux procps mount \
-		lvm2 hostname sudo
+		lvm2 hostname sudo &>>$lgfile
 fi
 
 kr64inst=`uname -p 2>/dev/null|grep x86_64|head -n1|wc -l`
@@ -100,7 +100,7 @@ centos-based)
 	fi
 
 	# Kill packet.net repositories if detected here.
-	yum -y install yum-utils
+	yum -y install yum-utils &>>$lgfile
 	repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 	for myrepo in $repotokill
 	do
@@ -108,19 +108,19 @@ centos-based)
 		yum-config-manager --disable $myrepo &>>$lgfile
 	done
 	
-	yum -y install epel-release
+	yum -y install epel-release &>>$lgfile
 
 	yum -y install wget bzip2 texlive net-tools alien gnutls-utils texlive-collection-latexrecommended \
 	texlive-changepage texlive-titlesec rsync rng-tools haveged yum-utils device-mapper-persistent-data \
-	mingw32-nsis
+	mingw32-nsis &>>$lgfile
 	mkdir -p /usr/share/texlive/texmf-local/tex/latex/comment
-	wget http://mirrors.ctan.org/macros/latex/contrib/comment/comment.sty -O /usr/share/texlive/texmf-local/tex/latex/comment/comment.sty
+	wget http://mirrors.ctan.org/macros/latex/contrib/comment/comment.sty -O /usr/share/texlive/texmf-local/tex/latex/comment/comment.sty &>>$lgfile
 	cd /usr/share/texlive/texmf-local/tex/latex/comment
 	chmod 644 comment.sty
-	texhash
+	texhash &>>$lgfile
 	cd /
 
-	yum -y update --exclude=kernel*
+	yum -y update --exclude=kernel* &>>$lgfile
 	
 	cat<<EOF >/etc/systemd/system/rngd.service
 [Unit]
@@ -140,11 +140,11 @@ EOF
 	wget  https://www.atomicorp.com/installers/atomic -O /root/atomic.sh
 	chmod 755 /root/atomic.sh
 	export NON_INT=1
-	/root/atomic.sh
+	/root/atomic.sh &>>$lgfile
 	
-	yum -y update --exclude=kernel*
+	yum -y update --exclude=kernel* &>>$lgfile
 	
-	yum -y install redis 
+	yum -y install redis  &>>$lgfile
 	grep -v unixsocket /etc/redis.conf > /etc/redis.conf.TEMP
 	cat /etc/redis.conf.TEMP > /etc/redis.conf
 	rm -f /etc/redis.conf.TEMP
@@ -153,13 +153,13 @@ EOF
 	systemctl enable redis
 	systemctl restart redis
 	
-	yum -y install openvas
+	yum -y install openvas &>>$lgfile
 	
 	greenbone-nvt-sync --wget &>>$lgfile
 	greenbone-certdata-sync &>>$lgfile
 	greenbone-scapdata-sync &>>$lgfile
 	
-	openvas-manage-certs -a
+	openvas-manage-certs -a &>>$lgfile
 	
 	sync
 
@@ -185,8 +185,8 @@ EOF
 	systemctl restart gsad
 	systemctl enable gsad
 	
-	openvasmd --create-user=$openvasadmuser --role=Admin
-	openvasmd --user=$openvasadmuser --new-password=$openvasadmpass
+	openvasmd --create-user=$openvasadmuser --role=Admin &>>$lgfile
+	openvasmd --user=$openvasadmuser --new-password=$openvasadmpass &>>$lgfile
 	
 	sed -r -i 's/auto_plugin_update=no/auto_plugin_update=yes/g' /etc/sysconfig/openvas-scanner
 	systemctl restart crond
@@ -204,12 +204,12 @@ debian-based)
 	
 	export DEBIAN_FRONTEND=noninteractive
 	
-	apt-get -y update
+	apt-get -y update &>>$lgfile
 	apt-get -y install \
 	apt-transport-https \
 	ca-certificates \
 	curl \
-	software-properties-common
+	software-properties-common &>>$lgfile
 
 	#apt-get \
 	#-o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
@@ -217,12 +217,12 @@ debian-based)
 	
 	# https://launchpad.net/~mrazavi/+archive/ubuntu/openvas
 	export DEBIAN_FRONTEND=noninteractive
-	apt-get -y install texlive-latex-extra --no-install-recommends
-	add-apt-repository -y ppa:mrazavi/openvas
-	apt-get -y update
-	apt-get -y install alien nsis rpm nmap sqlite3
-	apt-get -y install redis-server
-	apt-get -y install rng-tools
+	apt-get -y install texlive-latex-extra --no-install-recommends &>>$lgfile
+	add-apt-repository -y ppa:mrazavi/openvas &>>$lgfile
+	apt-get -y update &>>$lgfile
+	apt-get -y install alien nsis rpm nmap sqlite3 &>>$lgfile
+	apt-get -y install redis-server &>>$lgfile
+	apt-get -y install rng-tools &>>$lgfile
 	systemctl stop rng-tools
 	systemctl disable rng-tools
 
@@ -241,7 +241,7 @@ EOF
 	systemctl restart rngd
 	systemctl enable rngd
 	
-	DEBIAN_FRONTEND=noninteractive apt-get -y install openvas9
+	DEBIAN_FRONTEND=noninteractive apt-get -y install openvas9 &>>$lgfile
 	
 	greenbone-nvt-sync --wget &>>$lgfile
 	greenbone-certdata-sync &>>$lgfile
@@ -266,8 +266,8 @@ EOF
 	systemctl restart openvas-manager
 	systemctl enable openvas-scanner openvas-manager
 
-	openvasmd --create-user=$openvasadmuser --role=Admin
-	openvasmd --user=$openvasadmuser --new-password=$openvasadmpass
+	openvasmd --create-user=$openvasadmuser --role=Admin &>>$lgfile
+	openvasmd --user=$openvasadmuser --new-password=$openvasadmpass &>>$lgfile
 	
 	sed -r -i 's/PORT_NUMBER=4000/PORT_NUMBER=9392/g' /etc/default/openvas-gsa
 		

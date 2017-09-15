@@ -7,7 +7,7 @@
 #
 # Cloudify Community automatic installer script.
 # Baremetal version (Generic), Cloudify Community.
-# Release 1.2
+# Release 1.3
 #
 # This script (that can run on any kind of machine) fully
 # automates the installation of Cloudify series 17.3 (Community)
@@ -41,7 +41,9 @@ if [ -f /etc/centos-release ]
 then
 	OSFlavor='centos-based'
 	yum clean all
-	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which lvm2
+	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git \
+	findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux \
+	procps-ng which lvm2 &>>$lgfile
 fi
 
 cpus=`lscpu -a --extended|grep -ic yes`
@@ -75,17 +77,17 @@ centos-based)
 	# RHEL compatibility. Just in case, we'll use EPEL only if we can
 	# detect we are running inside a CentOS machine. Otherwise, we'll not
 	# install EPEL, needed for "jq" command used in this script.
-	yum -y install curl wget redhat-lsb-core net-tools
-	yum -y install findutils iproute grep openssh sed coreutils gawk openssl which
+	yum -y install curl wget redhat-lsb-core net-tools &>>$lgfile
+	yum -y install findutils iproute grep openssh sed coreutils gawk openssl which &>>$lgfile
 	# If we are a "CentOS" machine, then we'll use epel-release and jq from epel.
 	# If we are not a Centos machine, we'll just download "jq" from github.
 	amicentos=`lsb_release -i|grep -ic centos`
 	if [ $amicentos == "1" ]
 	then
-		yum -y install epel-release
-		yum -y install jq
+		yum -y install epel-release &>>$lgfile
+		yum -y install jq &>>$lgfile
 	else
-		wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 -O /usr/local/bin/jq
+		wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 -O /usr/local/bin/jq &>>$lgfile
 		chmod 755 /usr/local/bin/jq
 	fi
 	
@@ -102,12 +104,12 @@ centos-based)
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-	yum -y erase firewalld
-	yum -y install tuned tuned-utils
+	yum -y erase firewalld &>>$lgfile
+	yum -y install tuned tuned-utils &>>$lgfile
 	echo "virtual-guest" > /etc/tuned/active_profile
 	systemctl enable tuned
 	systemctl start tuned
-	yum -y install http://repository.cloudifysource.org/cloudify/17.3.31/release/cloudify-17.3.31~community.el6.x86_64.rpm
+	yum -y install http://repository.cloudifysource.org/cloudify/17.3.31/release/cloudify-17.3.31~community.el6.x86_64.rpm &>>$lgfile
 	;;
 unknown)
 	echo "Unkown or unsupported distribution detected. Aborting !." &>>$lgfile
@@ -176,7 +178,7 @@ cfy status  &>>$lgfile
 # Perform API TEST
 apitest=`curl -X GET --header "Tenant: default_tenant" -u $admuser:$admpass "http://localhost/api/v3/status?_include=status" 2>/dev/null|jq '.status' 2>/dev/null|grep running|wc -l`
 
-yum -y install firewalld
+yum -y install firewalld &>>$lgfile
 systemctl enable firewalld
 systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent

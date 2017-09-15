@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # OpenStack bootstrap script - SINGLE-NIC Installation mode
-# Rel 1.0
+# Rel 1.1
 # For usage on centos7 64 bits machines with a single usable NIC
 # (bonded NIC's supported too - specially those from Packet.net)
 #
@@ -33,7 +33,9 @@ if [ -f /etc/centos-release ]
 then
 	OSFlavor='centos-based'
 	yum clean all
-	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which lvm2
+	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils \
+	iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng \
+	which lvm2 &>>$lgfile
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -98,7 +100,7 @@ then
 fi
 
 # Kill packet.net repositories - they break openstack packages.
-yum -y install yum-utils
+yum -y install yum-utils &>>$lgfile
 repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 for myrepo in $repotokill
 do
@@ -109,7 +111,7 @@ done
 yum -y clean all
 modprobe loop
 
-yum -y install epel-release centos-release-openstack-ocata
+yum -y install epel-release centos-release-openstack-ocata &>>$lgfile
 if [ $debug == "yes" ]
 then
 	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/CentOS-Ceph-Jewel.repo -O /etc/yum.repos.d/CentOS-Ceph-Jewel.repo
@@ -127,7 +129,7 @@ net.ipv4.conf.default.rp_filter=0
 EOF
 sysctl -p /etc/sysctl.d/10-openstack-sysctl.conf
 
-yum -y install openvswitch
+yum -y install openvswitch &>>$lgfile
 systemctl start openvswitch
 systemctl enable openvswitch
 

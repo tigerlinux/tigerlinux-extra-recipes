@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # Moodle Server Installation Script
-# Rel 1.1
+# Rel 1.2
 # For usage on centos7 64 bits machines.
 #
 
@@ -23,7 +23,7 @@ then
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools \
 	git findutils iproute grep openssh sed gawk openssl which xz bzip2 \
-	util-linux procps-ng which lvm2 sudo hostname rsync
+	util-linux procps-ng which lvm2 sudo hostname rsync &>>$lgfile
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -66,7 +66,7 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y install firewalld
+yum -y install firewalld &>>$lgfile
 systemctl enable firewalld
 systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
@@ -91,7 +91,7 @@ then
 fi
 
 # Kill packet.net repositories if detected here.
-yum -y install yum-utils
+yum -y install yum-utils &>>$lgfile
 repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 for myrepo in $repotokill
 do
@@ -100,8 +100,8 @@ do
 done
 
 
-yum -y install epel-release
-yum -y install yum-utils device-mapper-persistent-data
+yum -y install epel-release &>>$lgfile
+yum -y install device-mapper-persistent-data &>>$lgfile
 
 cat <<EOF >/etc/yum.repos.d/mariadb101.repo
 [mariadb]
@@ -116,8 +116,8 @@ then
 	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/mariadb101-amd64.repo -O /etc/yum.repos.d/mariadb101.repo
 fi
 
-yum -y update --exclude=kernel*
-yum -y install MariaDB MariaDB-server MariaDB-client galera crudini
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile
 
 cat <<EOF >/etc/my.cnf.d/server-lamp.cnf
 [mysqld]
@@ -189,13 +189,13 @@ echo "Moodle DB Name: moodle" >> $credfile
 echo "Moodle DB User: moodledbuser" >> $credfile
 echo "Moodle DB User Password: $moodledbpass" >> $credfile
 
-yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-yum -y update --exclude=kernel*
-yum -y erase php-common
+yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm &>>$lgfile
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y erase php-common &>>$lgfile
 yum -y install httpd mod_php71w php71w-common php71w-mbstring \
 php71w-xmlrpc php71w-soap php71w-gd php71w-xml php71w-intl \
 php71w-mysqlnd php71w-cli php71w-mcrypt php71w-ldap php71w-opcache \
-python-certbot-apache mod_evasive mod_ssl
+python-certbot-apache mod_evasive mod_ssl &>>$lgfile
 
 crudini --set /etc/php.ini PHP upload_max_filesize 100M
 crudini --set /etc/php.ini PHP post_max_size 100M
@@ -240,9 +240,9 @@ systemctl reload crond
 sed -i 's/^/#&/g' /etc/httpd/conf.d/welcome.conf
 sed -i "s/Options Indexes FollowSymLinks/Options FollowSymLinks/" /etc/httpd/conf/httpd.conf
 
-wget https://download.moodle.org/stable33/moodle-latest-33.tgz -O /root/moodle-latest-33.tgz
-tar -xzvf /root/moodle-latest-33.tgz -C /usr/local/src/
-rsync -avP /usr/local/src/moodle/ /var/www/html/
+wget https://download.moodle.org/stable33/moodle-latest-33.tgz -O /root/moodle-latest-33.tgz &>>$lgfile
+tar -xzvf /root/moodle-latest-33.tgz -C /usr/local/src/ &>>$lgfile
+rsync -avP /usr/local/src/moodle/ /var/www/html/ &>>$lgfile
 chown -R root.root /var/www/html
 rm -rf /root/moodle-latest-33.tgz /usr/local/src/moodle
 

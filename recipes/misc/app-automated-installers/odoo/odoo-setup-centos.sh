@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # ODOO ERP RELEASE 10 Setup for Centos 7 64 bits
-# Release 1.4
+# Release 1.5
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -21,7 +21,7 @@ then
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git \
 	findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux \
-	procps-ng which lvm2 sudo hostname
+	procps-ng which lvm2 sudo hostname &>>$lgfile
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
@@ -76,7 +76,7 @@ then
 fi
 
 # Kill packet.net repositories if detected here.
-yum -y install yum-utils
+yum -y install yum-utils &>>$lgfile
 repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 for myrepo in $repotokill
 do
@@ -84,12 +84,12 @@ do
 	yum-config-manager --disable $myrepo &>>$lgfile
 done
 
-yum -y install epel-release
-yum -y install yum-utils device-mapper-persistent-data
+yum -y install epel-release &>>$lgfile
+yum -y install device-mapper-persistent-data &>>$lgfile
 
-yum -y update --exclude=kernel*
+yum -y update --exclude=kernel* &>>$lgfile
 
-yum -y install firewalld
+yum -y install firewalld &>>$lgfile
 systemctl enable firewalld
 systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
@@ -100,18 +100,18 @@ firewall-cmd --reload
 echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
 sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
 
-yum -y install postgresql-server
+yum -y install postgresql-server &>>$lgfile
 
-postgresql-setup initdb
+postgresql-setup initdb &>>$lgfile
 systemctl start postgresql
 systemctl enable postgresql
 
-yum-config-manager --add-repo=https://nightly.odoo.com/10.0/nightly/rpm/odoo.repo
-yum -y update --exclude=kernel*
+yum-config-manager --add-repo=https://nightly.odoo.com/10.0/nightly/rpm/odoo.repo &>>$lgfile
+yum -y update --exclude=kernel* &>>$lgfile
 curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -
-yum -y install nodejs
+yum -y install nodejs &>>$lgfile
 yum -y install odoo fontconfig libpng libX11 libXext libXrender \
-xorg-x11-fonts-Type1 xorg-x11-fonts-75dpi wkhtmltopdf
+xorg-x11-fonts-Type1 xorg-x11-fonts-75dpi wkhtmltopdf &>>$lgfile
 
 systemctl enable odoo
 systemctl start odoo
@@ -130,11 +130,11 @@ EOF
 
 systemctl restart odoo
 
-yum -y install nginx
+yum -y install nginx &>>$lgfile
 
 cat /etc/nginx/nginx.conf >> /etc/nginx/nginx.conf.original
 
-openssl dhparam -out /etc/nginx/dhparams.pem 2048
+openssl dhparam -out /etc/nginx/dhparams.pem 2048 &>>$lgfile
 
 cat <<EOF >/etc/nginx/nginx.conf
 include /usr/share/nginx/modules/*.conf;
@@ -196,7 +196,7 @@ EOF
 mkdir -p /etc/pki/nginx
 mkdir -p /etc/pki/nginx/private
 
-openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt
+openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt &>>$lgfile
 
 chmod 0600 /etc/pki/nginx/private/server.key
 chown nginx.nginx /etc/pki/nginx/private/server.key
@@ -204,7 +204,7 @@ chown nginx.nginx /etc/pki/nginx/private/server.key
 systemctl restart nginx
 systemctl enable nginx
 
-yum -y install python2-certbot-nginx
+yum -y install python2-certbot-nginx &>>$lgfile
 
 cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
 #

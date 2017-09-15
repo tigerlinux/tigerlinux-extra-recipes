@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # ZoneMinder Setup for Centos 7 64 bits
-# Release 1.1
+# Release 1.2
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -21,7 +21,7 @@ then
 	yum clean all
 	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git \
 	findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux \
-	procps-ng which lvm2 sudo hostname
+	procps-ng which lvm2 sudo hostname &>>$lgfile
 	setenforce 0
 	sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 	sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
@@ -52,7 +52,7 @@ then
 	exit 0
 fi
 
-yum -y install firewalld
+yum -y install firewalld &>>$lgfile
 systemctl enable firewalld
 systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
@@ -86,7 +86,7 @@ then
 fi
 
 # Kill packet.net repositories if detected here.
-yum -y install yum-utils
+yum -y install yum-utils &>>$lgfile
 repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 for myrepo in $repotokill
 do
@@ -94,12 +94,12 @@ do
 	yum-config-manager --disable $myrepo &>>$lgfile
 done
 
-yum -y install epel-release
-yum -y install yum-utils device-mapper-persistent-data
+yum -y install epel-release &>>$lgfile
+yum -y install device-mapper-persistent-data &>>$lgfile
 
-yum -y update --exclude=kernel*
+yum -y update --exclude=kernel* &>>$lgfile
 
-yum -y install mariadb-server mariadb crudini
+yum -y install mariadb-server mariadb crudini &>>$lgfile
 
 echo "" > /etc/my.cnf.d/server-zoneminder.cnf
 
@@ -162,9 +162,9 @@ chmod 0600 /root/.my.cnf
 
 rm -f /root/os-db.sql
 
-yum -y install --nogpgcheck http://zmrepo.zoneminder.com/el/7/x86_64/zmrepo-7-9.el7.centos.noarch.rpm
+yum -y install --nogpgcheck http://zmrepo.zoneminder.com/el/7/x86_64/zmrepo-7-9.el7.centos.noarch.rpm &>>$lgfile
 
-yum -y update --exclude=kernel*
+yum -y update --exclude=kernel* &>>$lgfile
 yum -y install httpd mod_ssl php-common mod_php php-pear \
 php-opcache php-pdo php-mbstring php-mysqlnd php-xml \
 php-bcmath php-json php-cli php-gd \
@@ -174,7 +174,7 @@ perl-Email-Date-Format perl-IO-stringy perl-IO-Zlib \
 perl-MailTools perl-MIME-Lite perl-MIME-tools perl-MIME-Types \
 perl-Module-Load perl-Package-Constants \
 perl-Time-HiRes perl-TimeDate perl-YAML-Syck \
-mod_evasive mod_ssl
+mod_evasive mod_ssl &>>$lgfile
 	
 crudini --set /etc/php.ini PHP upload_max_filesize 100M
 crudini --set /etc/php.ini PHP post_max_size 100M
@@ -206,7 +206,7 @@ sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf
 systemctl restart httpd
 systemctl enable httpd
 
-yum -y install zoneminder
+yum -y install zoneminder &>>$lgfile
 
 mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep password /root/.my.cnf |cut -d\" -f2` < /usr/share/zoneminder/db/zm_create.sql
 

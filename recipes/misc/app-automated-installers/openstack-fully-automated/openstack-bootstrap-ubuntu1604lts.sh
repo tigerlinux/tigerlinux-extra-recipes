@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # OpenStack bootstrap script - systemd-installer mode
-# Rel 1.0
+# Rel 1.1
 # For usage on ubuntu1604lts 64 bits machines.
 #
 
@@ -20,7 +20,7 @@ if [ -f /etc/debian_version ]
 then
 	OSFlavor='debian-based'
 	apt-get -y clean
-	apt-get -y update
+	apt-get -y update &>>$lgfile
 
 	cat<<EOF >/etc/apt/apt.conf.d/99aptget-reallyunattended
 Dpkg::Options {
@@ -35,7 +35,7 @@ EOF
 		-y install \
 		coreutils grep debianutils base-files lsb-release curl wget net-tools git \
 		iproute openssh-client sed openssl xz-utils bzip2 util-linux procps mount \
-		lvm2 hostname sudo
+		lvm2 hostname sudo &>>$lgfile
 else
 	echo "Nota an Ubuntu Machine. Aborting!." &>>$lgfile
 	exit 0
@@ -105,15 +105,15 @@ then
 	exit 0
 fi
 
-apt-get -y install software-properties-common
-apt-get -y install ubuntu-cloud-keyring
-add-apt-repository -y cloud-archive:ocata
+apt-get -y install software-properties-common &>>$lgfile
+apt-get -y install ubuntu-cloud-keyring &>>$lgfile
+add-apt-repository -y cloud-archive:ocata &>>$lgfile
 
 if [ $debug == "yes" ]
 then
 	wget http://mirror.gatuvelus.home/cfgs/repos/ubuntu1604lts/ubuntu-cloud-archive-ocata-xenial.list -O /etc/apt/sources.list.d/cloudarchive-ocata.list
 fi
-apt-get -y update
+apt-get -y update &>>$lgfile
 
 cat <<EOF >/etc/sysctl.d/10-openstack-sysctl.conf
 net.ipv4.ip_forward=1
@@ -122,7 +122,7 @@ net.ipv4.conf.default.rp_filter=0
 EOF
 sysctl -p /etc/sysctl.d/10-openstack-sysctl.conf
 
-apt-get -y install openvswitch-switch python-openvswitch
+apt-get -y install openvswitch-switch python-openvswitch &>>$lgfile
 /etc/init.d/openvswitch-switch restart
 systemctl enable openvswitch-switch
 systemctl restart openvswitch-switch

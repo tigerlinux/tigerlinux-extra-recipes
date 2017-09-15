@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # NextCloud Automated Installation Script
-# Rel 1.3
+# Rel 1.4
 # For usage on centos7 64 bits machines.
 #
 
@@ -18,7 +18,9 @@ if [ -f /etc/centos-release ]
 then
 	OSFlavor='centos-based'
 	yum clean all
-	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng which lvm2 sudo hostname
+	yum -y install coreutils grep curl wget redhat-lsb-core net-tools \
+	git findutils iproute grep openssh sed gawk openssl which xz bzip2 \
+	util-linux procps-ng which lvm2 sudo hostname &>>$lgfile
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -54,7 +56,7 @@ fi
 setenforce 0
 sed -r -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -r -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-yum -y install firewalld
+yum -y install firewalld &>>$lgfile
 systemctl enable firewalld
 systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
@@ -79,7 +81,7 @@ then
 fi
 
 # Kill packet.net repositories if detected here.
-yum -y install yum-utils
+yum -y install yum-utils &>>$lgfile
 repotokill=`yum repolist|grep -i ^packet|cut -d/ -f1`
 for myrepo in $repotokill
 do
@@ -128,8 +130,8 @@ else
 	mount /var/nextcloud-sto-data
 fi
 
-yum -y install epel-release
-yum -y install yum-utils device-mapper-persistent-data
+yum -y install epel-release &>>$lgfile
+yum -y install device-mapper-persistent-data &>>$lgfile
 
 cat <<EOF >/etc/yum.repos.d/mariadb101.repo
 [mariadb]
@@ -139,8 +141,8 @@ gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
 
-yum -y update --exclude=kernel*
-yum -y install MariaDB MariaDB-server MariaDB-client galera crudini
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile
 
 cat <<EOF >/etc/my.cnf.d/server-nextcloud.cnf
 [mysqld]
@@ -199,12 +201,13 @@ chmod 0600 /root/.my.cnf
 
 rm -f /root/os-db.sql
 
-yum -y install centos-release-scl
-yum -y update --exclude=kernel*
-yum -y erase php-common
+yum -y install centos-release-scl &>>$lgfile
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y erase php-common &>>$lgfile
 yum -y install httpd rh-php56 rh-php56-php rh-php56-php-gd rh-php56-php-mbstring \
 rh-php56-php-mysqlnd rh-php56-php-ldap rh-php56-php-pecl-memcache \
-rh-php56-php-pdo rh-php56-php-xml rh-php56-php-cli redis sclo-php56-php-pecl-redis
+rh-php56-php-pdo rh-php56-php-xml rh-php56-php-cli redis \
+sclo-php56-php-pecl-redis &>>$lgfile
 
 rm -f /etc/httpd/conf.d/php.conf
 rm -f /etc/httpd/conf.modules.d/10-php.conf
@@ -231,7 +234,7 @@ else
 	crudini --set /etc/php.ini PHP date.timezone "UTC"
 fi
 
-yum -y install mod_evasive mod_ssl
+yum -y install mod_evasive mod_ssl &>>$lgfile
 
 cat <<EOF >/etc/httpd/conf.d/extra-security.conf
 ServerTokens ProductOnly
@@ -250,9 +253,9 @@ sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf
 systemctl enable redis
 systemctl start redis
 
-wget https://download.nextcloud.com/server/releases/latest-11.zip -O /root/latest-11.zip
+wget https://download.nextcloud.com/server/releases/latest-11.zip -O /root/latest-11.zip &>>$lgfile
 yum -y install unzip
-unzip /root/latest-11.zip -d /var/www/html/
+unzip /root/latest-11.zip -d /var/www/html/ &>>$lgfile
 rm -f /root/latest-11.zip
 
 cat <<EOF >/var/www/html/index.html
@@ -284,7 +287,7 @@ sudo -u apache /usr/local/bin/php \
 --database-pass "$mariadbpass" \
 --admin-user "admin" \
 --admin-pass "$nextcloudadminpass" \
---data-dir="/var/nextcloud-sto-data"
+--data-dir="/var/nextcloud-sto-data" &>>$lgfile
 
 cat<<EOF >/root/nextcloud-credentials.txt
 Nextcloud admin user: admin
