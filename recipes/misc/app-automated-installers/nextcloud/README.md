@@ -5,8 +5,8 @@ Supported Operating Systems: Centos 7. Nextcloud release 11.
 
 ## Scripts included on this directory:
 
-- nextcloud-generic-storage.sh: Nextcloud fully automated installer with standard storage.
-- nextcloud-minios3-storage.sh: Nextcloud fully automated installer with minio-s3 based storage.
+- nextcloud-XX-generic-storage.sh: Nextcloud fully automated installer with standard storage (where XX is the nextcloud release).
+- nextcloud-XX-minios3-storage.sh: Nextcloud fully automated installer with minio-s3 based storage (where XX is the nextcloud release).
 
 
 ## Usage:
@@ -42,7 +42,7 @@ The script perform the following actions in the operating system:
 - Configure MariaDB 10.1 repository for Centos7, and then installs and configure MariaDB 10.1 with a secure password also stored on the file "/root/.my.cnf" with unix mode "0600".
 - Perform a full-update of the operating system with the new repos activated.
 - Creates a database for nextcloud.
-- Install and configures php 5.6 from additional Centos7 repos.
+- Install and configures php 7.1 from webtactic repos.
 - Also installs apache and redis (redis will be used for cache and file locking on nextcloud).
 - Fully automates the nextcloud configuration, including admin user and its passwords.
 - Fully include the "hostnames/IP's" in the nextcloud configuration. If the machine is a cloud machine (amazon, openstack or any other using standard metadata services), it try to configure the external IP and external hostname into the nextcloud configuration.
