@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LEMP Server Installation Script
-# Rel 1.4
+# Rel 1.5
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -392,7 +392,7 @@ EOF
 	mkdir -p /var/www/phpmyadmin/uploads
 	mkdir -p /var/www/phpmyadmin/saves
 	chown -R root.root /var/www/phpmyadmin
-	chown -R apache.apache /var/www/phpmyadmin/uploads /var/www/phpmyadmin/saves
+	chown -R nginx.nginx /var/www/phpmyadmin/uploads /var/www/phpmyadmin/saves
 	
 	cat<<EOF >/root/os-db.sql
 CREATE DATABASE IF NOT EXISTS phpmyadmin default character set utf8;
