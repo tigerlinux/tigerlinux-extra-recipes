@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # FusionPBX Installation Script
-# Rel 1.0
+# Rel 1.1
 # For usage on centos7 64 bits machines.
 #
 
@@ -170,6 +170,8 @@ systemctl stop freeswitch &>>$lgfile
 systemctl start freeswitch &>>$lgfile
 
 mytimezone=`timedatectl status|grep -i "time zone:"|cut -d: -f2|awk '{print $1}'`
+
+yum -y install crudini
 
 if [ -f /usr/share/zoneinfo/$mytimezone ]
 then
