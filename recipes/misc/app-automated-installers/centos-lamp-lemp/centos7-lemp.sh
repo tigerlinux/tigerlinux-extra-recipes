@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LEMP Server Installation Script
-# Rel 1.5
+# Rel 1.6
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -267,6 +267,9 @@ http {
   listen       80 default_server;
   listen       [::]:80 default_server;
   server_name  _;
+  #Uncomment the following line if you want to redirect your http site
+  #to the https one.
+  #return 301 https://$server_name$request_uri;
   root /usr/share/nginx/html;
 
   # Load configuration files for the default server block.
@@ -274,6 +277,14 @@ http {
 
   location / {
     index index.php index.html index.htm;
+	# Un-comment the following commented rules if your site is running wordpress
+    #if (-f \$request_filename) {
+    # expires 30d;
+    # break;
+    #}
+    #if (!-e \$request_filename) {
+    #  rewrite ^(.+)\$ /index.php?q=\$1 last;
+    #}
     location ~ ^/.+\.php {
     fastcgi_param  SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
     fastcgi_index  index.php;
@@ -306,6 +317,14 @@ http {
 
   location / {
     index index.php index.html index.htm;
+	# Un-comment the following commented rules if your site is running wordpress
+    #if (-f \$request_filename) {
+    # expires 30d;
+    # break;
+    #}
+    #if (!-e \$request_filename) {
+    #  rewrite ^(.+)\$ /index.php?q=\$1 last;
+    #}
     location ~ ^/.+\.php {
       fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
       fastcgi_index  index.php;

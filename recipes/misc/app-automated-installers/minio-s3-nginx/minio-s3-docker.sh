@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # Minio-S3 installation script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.4
+# Release 1.5
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -287,7 +287,7 @@ server {
  index index.html index.htm index.nginx-debian.html;
  server_name `hostname`;
  location / {
-  try_files $uri $uri/ =404;
+  try_files \$uri \$uri/ =404;
   proxy_buffering off;
   proxy_set_header Host \$http_host;
   proxy_pass http://127.0.0.1:9000;
