@@ -4,23 +4,23 @@
 # tigerlinux@gmail.com
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
-# NextCloud 11 Automated Installation Script
-# Rel 1.5
+# NextCloud 12 with MinioS3 Automated Installation Script
+# Rel 1.1
 # For usage on centos7 64 bits machines.
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
-export OSFlavor='unknown'
-export lgfile="/var/log/nextcloud-automated-installer.log"
+OSFlavor='unknown'
+lgfile="/var/log/nextcloud-automated-installer.log"
 echo "Start Date/Time: `date`" &>>$lgfile
 
 if [ -f /etc/centos-release ]
 then
 	OSFlavor='centos-based'
 	yum clean all
-	yum -y install coreutils grep curl wget redhat-lsb-core net-tools \
-	git findutils iproute grep openssh sed gawk openssl which xz bzip2 \
-	util-linux procps-ng which lvm2 sudo hostname &>>$lgfile
+	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils \
+	iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng \
+	which lvm2 sudo hostname &>>$lgfile
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -31,10 +31,17 @@ amicen=`lsb_release -i|grep -ic centos`
 crel7=`lsb_release -r|awk '{print $2}'|grep ^7.|wc -l`
 if [ $amicen != "1" ] || [ $crel7 != "1" ]
 then
-	echo "This is NOT a Centos 7 machine. Aborting !" &>>$lgfile
+	echo "NOT a Centos 7 distro. Aborting !" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
+
+export mariadbpass=`openssl rand -hex 10`
+export nextcloudadminpass=`openssl rand -hex 10`
+# Note: Minio access key need to be from 5 to 20 chars. hex 10 give us 20 chars
+export minioaccesskey=`openssl rand -hex 10`
+# Note: Minio secret need to be from 10 to 40 chars. hex 20 give us 40 chars
+export miniosecret=`openssl rand -hex 20`
 
 if [ `uname -p 2>/dev/null|grep x86_64|head -n1|wc -l` != "1" ]
 then
@@ -42,9 +49,6 @@ then
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
-
-export mariadbpass=`openssl rand -hex 10`
-export nextcloudadminpass=`openssl rand -hex 10`
 
 if [ `lscpu -a --extended|grep -ic yes` -lt "1" ] || [ `free -m -t|grep -i mem:|awk '{print $2}'` -lt "900" ] || [ `df -k --output=avail /usr|tail -n 1` -lt "5000000" ] || [ `df -k --output=avail /var|tail -n 1` -lt "5000000" ]
 then
@@ -62,6 +66,7 @@ systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
 firewall-cmd --zone=public --add-service=https --permanent
 firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --zone=public --add-port=8080/tcp --permanent
 firewall-cmd --reload
 
 echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
@@ -116,6 +121,8 @@ do
 	fi
 done
 
+mkdir -p /var/minio-storage
+
 if [ -z $nxsto ]
 then
 	echo "No usable extra storage found" &>>$lgfile
@@ -123,15 +130,17 @@ else
 	echo "Extra storage found: $nxsto" &>>$lgfile
 	cat /etc/fstab > /etc/fstab.ORG
 	umount /dev/$nxsto >/dev/null 2>&1
-	cat /etc/fstab |egrep -v "($nxsto|nextcloudsto)" > /etc/fstab.NEW
+	cat /etc/fstab |egrep -v "($nxsto|minios3sto)" > /etc/fstab.NEW
 	cat /etc/fstab.NEW > /etc/fstab
-	mkfs.ext4 -F -F -L nextcloudsto /dev/$nxsto
-	echo 'LABEL=nextcloudsto /var/nextcloud-sto-data ext4 defaults 0 0' >> /etc/fstab
-	mount /var/nextcloud-sto-data
+	mkfs.ext4 -F -F -L minios3sto /dev/$nxsto
+	echo 'LABEL=minios3sto /var/minio-storage ext4 defaults 0 0' >> /etc/fstab
+	mount /var/minio-storage
 fi
 
-yum -y install epel-release &>>$lgfile
-yum -y install device-mapper-persistent-data &>>$lgfile
+mkdir -p /var/minio-storage/minioserver01/data
+mkdir -p /var/minio-storage/minioserver01/config
+
+yum -y install epel-release device-mapper-persistent-data &>>$lgfile
 
 cat <<EOF >/etc/yum.repos.d/mariadb101.repo
 [mariadb]
@@ -140,6 +149,100 @@ baseurl = http://yum.mariadb.org/10.1/centos7-amd64
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
+
+yum-config-manager \
+--add-repo \
+https://download.docker.com/linux/centos/docker-ce.repo
+
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y install docker-ce &>>$lgfile
+
+systemctl start docker
+systemctl enable docker
+
+docker pull minio/minio &>>$lgfile
+
+docker run \
+--detach -it \
+--name minioserver01 \
+--restart unless-stopped \
+-e "MINIO_ACCESS_KEY=$minioaccesskey" \
+-e "MINIO_SECRET_KEY=$miniosecret" \
+-p 127.0.0.1:9000:9000 \
+-v /var/minio-storage/minioserver01/data:/export \
+-v /var/minio-storage/minioserver01/config:/root/.minio \
+minio/minio server /export &>>$lgfile
+
+echo "Waiting 10 seconds" &>>$lgfile
+sync
+sleep 10
+sync
+if [ ! -f /var/minio-storage/minioserver01/config/config.json ]
+then
+	echo "Minio-S3 failed to install. Aborting!" &>>$lgfile
+	echo "End Date/Time: `date`" &>>$lgfile
+	exit 0
+fi
+
+yum -y install nginx &>>$lgfile
+
+cat /etc/nginx/nginx.conf >> /etc/nginx/nginx.conf.original
+
+cat <<EOF >/etc/nginx/nginx.conf
+include /usr/share/nginx/modules/*.conf;
+events {
+    worker_connections 1024;
+}
+http {
+ client_max_body_size 1000m;
+ log_format  main  '\$remote_addr - \$remote_user [$time_local] "\$request" '
+                   '\$status \$body_bytes_sent "\$http_referer" '
+                   '"\$http_user_agent" "\$http_x_forwarded_for"';
+
+ access_log  /var/log/nginx/access.log  main;
+ sendfile            on;
+ tcp_nopush          on;
+ tcp_nodelay         on;
+ keepalive_timeout   65;
+ types_hash_max_size 2048;
+ include             /etc/nginx/mime.types;
+ default_type        application/octet-stream;
+ include /etc/nginx/conf.d/*.conf;
+ server {
+  listen 8080 default_server;
+  listen [::]:8080 default_server;
+
+  server_name `hostname`;
+  location / {
+   proxy_buffering off;
+   proxy_set_header Host \$http_host;
+   proxy_pass http://127.0.0.1:9000;
+  }
+ }
+}
+EOF
+
+systemctl restart nginx
+systemctl enable nginx
+
+yum -y install wget jq &>>$lgfile
+wget https://dl.minio.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/miniocli &>>$lgfile
+chmod 755 /usr/local/bin/miniocli
+
+if [ -f /usr/local/bin/miniocli ]
+then
+	miniocli config host add minioserver01 \
+	http://127.0.0.1:9000 \
+	$minioaccesskey \
+	$miniosecret \
+	S3v4 &>>$lgfile
+	miniocli mb minioserver01/nextcloud
+else
+	echo "Minio client failed to install. Just an alert!" &>>$lgfile
+fi
+
+export minioaccess=$minioaccesskey
+export miniosecret=$miniosecret
 
 yum -y update --exclude=kernel* &>>$lgfile
 yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile
@@ -254,9 +357,9 @@ sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf
 systemctl enable redis
 systemctl start redis
 
-wget https://download.nextcloud.com/server/releases/latest-11.zip -O /root/latest-11.zip &>>$lgfile
-unzip /root/latest-11.zip -d /var/www/html/ &>>$lgfile
-rm -f /root/latest-11.zip
+wget https://download.nextcloud.com/server/releases/latest-12.zip -O /root/latest-12.zip &>>$lgfile
+unzip /root/latest-12.zip -d /var/www/html/ &>>$lgfile
+rm -f /root/latest-12.zip
 
 cat <<EOF >/var/www/html/index.html
 <HTML>
@@ -275,6 +378,7 @@ then
 	exit 0
 fi
 
+mkdir -p /var/nextcloud-sto-data
 chown -R apache.apache /var/www/html/nextcloud
 chown -R apache.apache /var/nextcloud-sto-data
 
@@ -306,7 +410,7 @@ do
 	trusted_domains $mycount \
 	--value=$myip
 	mycount=$[mycount+1]
-	echo "- http://$myip" >> /root/nextcloud-credentials.txt
+	echo "- Nextcloud: http://$myip (Minio: http://$myip:8080)" >> /root/nextcloud-credentials.txt
 done
 echo "Final counter: $mycount" &>>$lgfile
 
@@ -315,7 +419,7 @@ sudo -u apache /usr/local/bin/php \
 config:system:set \
 trusted_domains $mycount \
 --value=`hostname`
-echo "- http://`hostname`" >> /root/nextcloud-credentials.txt
+echo "- Nextcloud: http://`hostname` (Minio: http://`hostname`:8080)" >> /root/nextcloud-credentials.txt
 mycount=$[mycount+1]
 
 publicip=`curl http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null`
@@ -331,7 +435,7 @@ else
 	config:system:set \
 	trusted_domains $mycount \
 	--value=$publicip
-	echo "- http://$publicip" >> /root/nextcloud-credentials.txt
+	echo "- Nextcloud: http://$publicip (Minio: http://$publicip:8080)" >> /root/nextcloud-credentials.txt
 	mycount=$[mycount+1]
 fi
 
@@ -344,7 +448,7 @@ else
 	config:system:set \
 	trusted_domains $mycount \
 	--value=$publichostname
-	echo "- http://$publichostname" >> /root/nextcloud-credentials.txt
+	echo "- Nextcloud: http://$publichostname (Minio: http://$publichostname:8080)" >> /root/nextcloud-credentials.txt
 	mycount=$[mycount+1]
 fi
 
@@ -362,6 +466,20 @@ cat <<EOF >>/var/www/html/nextcloud/config/config.php
     'timeout' => 0.0,
     'password' => '', // Optional, if not defined no password will be used.
   ),
+  'objectstore' => [
+    'class' => 'OC\\Files\\ObjectStore\\S3',
+    'arguments' => [
+      'bucket' => 'nextcloud',
+      'autocreate' => true,
+      'key'    => '$minioaccess',
+      'secret' => '$miniosecret',
+      'hostname' => '127.0.0.1',
+      'port' => 8080,
+      'use_ssl' => false,
+      'region' => 'optional',
+      'use_path_style' => true
+    ],
+  ],
 );
 EOF
 
@@ -381,17 +499,48 @@ user:add --password-from-env \
 admin
 '
 
-finalcheck=`sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/occ config:system:get version 2>&1|grep -c ^11.`
+yum -y install python-certbot-apache &>>$lgfile
+
+cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
+#
+#
+# Letsencrypt automated renewal
+#
+# Every day at 01:30am
+#
+30 01 * * * root /usr/bin/certbot renew > /var/log/le-renew.log 2>&1
+#
+EOF
+
+cat<<EOF>/etc/cron.d/nextcloud-job-crontab
+#
+#
+# Nextcloud cron job
+#
+# Every 15 minutes
+#
+*/15 * * * * apache /usr/bin/php -f /var/www/html/nextcloud/cron.php
+#
+EOF
+
+sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/cron.php
+
+systemctl reload crond
+
+finalcheck=`sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/occ config:system:get version 2>&1|grep -c ^12.`
 
 if [ $finalcheck == "1" ]
 then
 	export nextcloudversion=`sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/occ config:system:get version 2>&1`
 	echo "NEXTCLOUD VERSION: $nextcloudversion" >> /root/nextcloud-credentials.txt
+	echo "Minio credentials:" >> /root/nextcloud-credentials.txt
+	echo "Access Key: $minioaccess" >> /root/nextcloud-credentials.txt
+	echo "Secret: $miniosecret" >> /root/nextcloud-credentials.txt
 	echo "Ready. Your nextcloud access credentials are stored in the file /root/nextcloud-credentials.txt:" &>>$lgfile
 	echo "" &>>$lgfile
 	cat /root/nextcloud-credentials.txt &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 else
-	echo "Nextcloud installation failed" &>>$lgfile
+	echo "Nextcloud with minio-s3 installation failed" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 fi

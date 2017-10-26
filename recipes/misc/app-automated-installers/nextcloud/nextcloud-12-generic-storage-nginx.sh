@@ -4,23 +4,23 @@
 # tigerlinux@gmail.com
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
-# NextCloud 12 with MinioS3 Automated Installation Script
+# NextCloud 12 Automated Installation Script - Nginx version
 # Rel 1.0
 # For usage on centos7 64 bits machines.
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
-OSFlavor='unknown'
-lgfile="/var/log/nextcloud-automated-installer.log"
+export OSFlavor='unknown'
+export lgfile="/var/log/nextcloud-automated-installer.log"
 echo "Start Date/Time: `date`" &>>$lgfile
 
 if [ -f /etc/centos-release ]
 then
 	OSFlavor='centos-based'
 	yum clean all
-	yum -y install coreutils grep curl wget redhat-lsb-core net-tools git findutils \
-	iproute grep openssh sed gawk openssl which xz bzip2 util-linux procps-ng \
-	which lvm2 sudo hostname &>>$lgfile
+	yum -y install coreutils grep curl wget redhat-lsb-core net-tools \
+	git findutils iproute grep openssh sed gawk openssl which xz bzip2 \
+	util-linux procps-ng which lvm2 sudo hostname &>>$lgfile
 else
 	echo "Nota a centos machine. Aborting!." &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
@@ -31,17 +31,10 @@ amicen=`lsb_release -i|grep -ic centos`
 crel7=`lsb_release -r|awk '{print $2}'|grep ^7.|wc -l`
 if [ $amicen != "1" ] || [ $crel7 != "1" ]
 then
-	echo "NOT a Centos 7 distro. Aborting !" &>>$lgfile
+	echo "This is NOT a Centos 7 machine. Aborting !" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
-
-export mariadbpass=`openssl rand -hex 10`
-export nextcloudadminpass=`openssl rand -hex 10`
-# Note: Minio access key need to be from 5 to 20 chars. hex 10 give us 20 chars
-export minioaccesskey=`openssl rand -hex 10`
-# Note: Minio secret need to be from 10 to 40 chars. hex 20 give us 40 chars
-export miniosecret=`openssl rand -hex 20`
 
 if [ `uname -p 2>/dev/null|grep x86_64|head -n1|wc -l` != "1" ]
 then
@@ -49,6 +42,9 @@ then
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
+
+export mariadbpass=`openssl rand -hex 10`
+export nextcloudadminpass=`openssl rand -hex 10`
 
 if [ `lscpu -a --extended|grep -ic yes` -lt "1" ] || [ `free -m -t|grep -i mem:|awk '{print $2}'` -lt "900" ] || [ `df -k --output=avail /usr|tail -n 1` -lt "5000000" ] || [ `df -k --output=avail /var|tail -n 1` -lt "5000000" ]
 then
@@ -66,7 +62,6 @@ systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
 firewall-cmd --zone=public --add-service=https --permanent
 firewall-cmd --zone=public --add-service=ssh --permanent
-firewall-cmd --zone=public --add-port=8080/tcp --permanent
 firewall-cmd --reload
 
 echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
@@ -96,51 +91,8 @@ done
 
 mkdir -p /var/nextcloud-sto-data
 
-cloudconfigdrive=`grep cloudconfig /etc/fstab |grep -v swap|awk '{print $1}'`
-if [ $cloudconfigdrive ]
-then
-	umount $cloudconfigdrive
-	cat /etc/fstab > /etc/fstab.backup-original
-	cat /etc/fstab|egrep -v $cloudconfigdrive > /etc/fstab.pre-cloudconfigdrive
-	cat /etc/fstab.pre-cloudconfigdrive > /etc/fstab
-fi
-
-devicelist=`lsblk -do NAME,TYPE -nl -e1,2,11|grep disk|grep -v drbd|awk '{print $1}'`
-
-nxsto=''
-for blkst in $devicelist
-do
-	if [ `lsblk -do NAME,TYPE|grep -v NAME|grep disk|awk '{print $1}'|grep -v da|grep -c ^$blkst` == "1" ] \
-	&& [ `blkid |grep $blkst|grep -ci swap` == 0 ] \
-	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ] \
-	&& [ `pvdisplay|grep -ci /dev/$blkst` == 0 ] \
-	&& [ `df -h|grep -ci ^/dev/$blkst` == 0 ]
-	then
-		echo "Device $blkst usable" &>>$lgfile
-		nxsto=$blkst
-	fi
-done
-
-mkdir -p /var/minio-storage
-
-if [ -z $nxsto ]
-then
-	echo "No usable extra storage found" &>>$lgfile
-else
-	echo "Extra storage found: $nxsto" &>>$lgfile
-	cat /etc/fstab > /etc/fstab.ORG
-	umount /dev/$nxsto >/dev/null 2>&1
-	cat /etc/fstab |egrep -v "($nxsto|minios3sto)" > /etc/fstab.NEW
-	cat /etc/fstab.NEW > /etc/fstab
-	mkfs.ext4 -F -F -L minios3sto /dev/$nxsto
-	echo 'LABEL=minios3sto /var/minio-storage ext4 defaults 0 0' >> /etc/fstab
-	mount /var/minio-storage
-fi
-
-mkdir -p /var/minio-storage/minioserver01/data
-mkdir -p /var/minio-storage/minioserver01/config
-
-yum -y install epel-release device-mapper-persistent-data &>>$lgfile
+yum -y install epel-release &>>$lgfile
+yum -y install device-mapper-persistent-data &>>$lgfile
 
 cat <<EOF >/etc/yum.repos.d/mariadb101.repo
 [mariadb]
@@ -149,100 +101,6 @@ baseurl = http://yum.mariadb.org/10.1/centos7-amd64
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
-
-yum-config-manager \
---add-repo \
-https://download.docker.com/linux/centos/docker-ce.repo
-
-yum -y update --exclude=kernel* &>>$lgfile
-yum -y install docker-ce &>>$lgfile
-
-systemctl start docker
-systemctl enable docker
-
-docker pull minio/minio &>>$lgfile
-
-docker run \
---detach -it \
---name minioserver01 \
---restart unless-stopped \
--e "MINIO_ACCESS_KEY=$minioaccesskey" \
--e "MINIO_SECRET_KEY=$miniosecret" \
--p 127.0.0.1:9000:9000 \
--v /var/minio-storage/minioserver01/data:/export \
--v /var/minio-storage/minioserver01/config:/root/.minio \
-minio/minio server /export &>>$lgfile
-
-echo "Waiting 10 seconds" &>>$lgfile
-sync
-sleep 10
-sync
-if [ ! -f /var/minio-storage/minioserver01/config/config.json ]
-then
-	echo "Minio-S3 failed to install. Aborting!" &>>$lgfile
-	echo "End Date/Time: `date`" &>>$lgfile
-	exit 0
-fi
-
-yum -y install nginx &>>$lgfile
-
-cat /etc/nginx/nginx.conf >> /etc/nginx/nginx.conf.original
-
-cat <<EOF >/etc/nginx/nginx.conf
-include /usr/share/nginx/modules/*.conf;
-events {
-    worker_connections 1024;
-}
-http {
- client_max_body_size 1000m;
- log_format  main  '\$remote_addr - \$remote_user [$time_local] "\$request" '
-                   '\$status \$body_bytes_sent "\$http_referer" '
-                   '"\$http_user_agent" "\$http_x_forwarded_for"';
-
- access_log  /var/log/nginx/access.log  main;
- sendfile            on;
- tcp_nopush          on;
- tcp_nodelay         on;
- keepalive_timeout   65;
- types_hash_max_size 2048;
- include             /etc/nginx/mime.types;
- default_type        application/octet-stream;
- include /etc/nginx/conf.d/*.conf;
- server {
-  listen 8080 default_server;
-  listen [::]:8080 default_server;
-
-  server_name `hostname`;
-  location / {
-   proxy_buffering off;
-   proxy_set_header Host \$http_host;
-   proxy_pass http://127.0.0.1:9000;
-  }
- }
-}
-EOF
-
-systemctl restart nginx
-systemctl enable nginx
-
-yum -y install wget jq &>>$lgfile
-wget https://dl.minio.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/miniocli &>>$lgfile
-chmod 755 /usr/local/bin/miniocli
-
-if [ -f /usr/local/bin/miniocli ]
-then
-	miniocli config host add minioserver01 \
-	http://127.0.0.1:9000 \
-	$minioaccesskey \
-	$miniosecret \
-	S3v4 &>>$lgfile
-	miniocli mb minioserver01/nextcloud
-else
-	echo "Minio client failed to install. Just an alert!" &>>$lgfile
-fi
-
-export minioaccess=$minioaccesskey
-export miniosecret=$miniosecret
 
 yum -y update --exclude=kernel* &>>$lgfile
 yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile
@@ -306,7 +164,7 @@ rm -f /root/os-db.sql
 yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
 yum -y update --exclude=kernel* &>>$lgfile
 yum -y erase php-common
-yum -y install httpd mod_php71w php71w php71w-opcache \
+yum -y install nginx php71w php71w-opcache \
 php71w-pear php71w-pdo php71w-xml php71w-pdo_dblib \
 php71w-mbstring php71w-mysqlnd php71w-mcrypt php71w-fpm \
 php71w-bcmath php71w-gd php71w-cli php71w-ldap \
@@ -340,28 +198,143 @@ else
 	crudini --set /etc/php.ini PHP date.timezone "UTC"
 fi
 
-cat <<EOF >/etc/httpd/conf.d/extra-security.conf
-ServerTokens ProductOnly
-FileETag None
-ExtendedStatus Off
-UseCanonicalName Off
-TraceEnable off
-ServerSignature Off
-Header always set Strict-Transport-Security "max-age=15552000; includeSubDomains"
+crudini --set /etc/php-fpm.d/www.conf www "env[PATH]" "/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin"
+
+mkdir -p /var/lib/php/session
+chown -R nginx:nginx /var/lib/php/session
+sed -r -i 's/apache/nginx/g' /etc/php-fpm.d/www.conf
+
+systemctl enable php-fpm
+systemctl restart php-fpm
+
+openssl dhparam -out /etc/nginx/dhparams.pem 2048 &>>$lgfile
+
+cat <<EOF >/etc/nginx/nginx.conf
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+include /usr/share/nginx/modules/*.conf;
+
+events {
+ worker_connections 1024;
+}
+
+http {
+ log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+ '\$status \$body_bytes_sent "\$http_referer" '
+ '"\$http_user_agent" "\$http_x_forwarded_for"';
+
+ access_log  /var/log/nginx/access.log  main;
+ client_max_body_size 100M;
+
+ sendfile            on;
+ tcp_nopush          on;
+ tcp_nodelay         on;
+ keepalive_timeout   65;
+ types_hash_max_size 2048;
+
+ include             /etc/nginx/mime.types;
+ default_type        application/octet-stream;
+
+ include /etc/nginx/conf.d/*.conf;
+
+ server {
+  listen       80 default_server;
+  listen       [::]:80 default_server;
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  server_name  _;
+  #Uncomment the following line if you want to redirect your http site
+  #to the https one.
+  #return 301 https://\$server_name\$request_uri;
+  root /usr/share/nginx/html;
+
+  # Load configuration files for the default server block.
+  include /etc/nginx/default.d/*.conf;
+
+  location / {
+    index index.php index.html index.htm;
+    location ~ ^/.+\.php {
+    fastcgi_param  SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+    fastcgi_index  index.php;
+    fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
+    fastcgi_param PATH_INFO \$fastcgi_path_info;
+    fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
+    include fastcgi_params;
+    fastcgi_pass 127.0.0.1:9000;
+  }
+ }
+
+ error_page 404 /404.html;
+ location = /40x.html {
+ }
+
+ error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+ }
+ server {
+  listen 443 ssl http2 default_server;
+  listen [::]:443 ssl http2 default_server;
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  server_name  _;
+  root /usr/share/nginx/html;
+
+  ssl_certificate "/etc/pki/nginx/server.crt";
+  ssl_certificate_key "/etc/pki/nginx/private/server.key";
+
+  include /etc/nginx/default.d/*.conf;
+
+  location / {
+    index index.php index.html index.htm;
+    location ~ ^/.+\.php {
+      fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
+      fastcgi_index  index.php;
+      fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
+      fastcgi_param PATH_INFO \$fastcgi_path_info;
+      fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
+      include fastcgi_params;
+      fastcgi_pass 127.0.0.1:9000;
+    }
+  }
+
+  error_page 404 /404.html;
+  location = /40x.html {
+  }
+
+  error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+ }
+}
 EOF
 
-sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
-sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
-sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
+cat <<EOF>/etc/nginx/default.d/sslconfig.conf
+ssl_session_cache shared:SSL:1m;
+ssl_session_timeout  10m;
+ssl_prefer_server_ciphers on;
+ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:!DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
+ssl_dhparam /etc/nginx/dhparams.pem;
+EOF
+
+mkdir -p /etc/pki/nginx
+mkdir -p /etc/pki/nginx/private
+
+openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt &>>$lgfile
+
+chmod 0600 /etc/pki/nginx/private/server.key
+chown nginx.nginx /etc/pki/nginx/private/server.key
 
 systemctl enable redis
 systemctl start redis
 
 wget https://download.nextcloud.com/server/releases/latest-12.zip -O /root/latest-12.zip &>>$lgfile
-unzip /root/latest-12.zip -d /var/www/html/ &>>$lgfile
+unzip /root/latest-12.zip -d /usr/share/nginx/html/ &>>$lgfile
 rm -f /root/latest-12.zip
 
-cat <<EOF >/var/www/html/index.html
+cat <<EOF >/usr/share/nginx/html/index.html
 <HTML>
 <HEAD>
 <META HTTP-EQUIV="refresh" CONTENT="0;URL=/nextcloud">
@@ -371,19 +344,18 @@ cat <<EOF >/var/www/html/index.html
 </HTML>
 EOF
 
-if [ ! -f /var/www/html/nextcloud/occ ]
+if [ ! -f /usr/share/nginx/html/nextcloud/occ ]
 then
 	echo "Nextcloud Installation FAILED. Aborting!" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
 
-mkdir -p /var/nextcloud-sto-data
-chown -R apache.apache /var/www/html/nextcloud
-chown -R apache.apache /var/nextcloud-sto-data
+chown -R nginx.nginx /usr/share/nginx/html/nextcloud
+chown -R nginx.nginx /var/nextcloud-sto-data
 
-sudo -u apache /usr/local/bin/php \
-/var/www/html/nextcloud/occ maintenance:install \
+sudo -u nginx /usr/local/bin/php \
+/usr/share/nginx/html/nextcloud/occ maintenance:install \
 --database "mysql" \
 --database-host 127.0.0.1:3306 \
 --database-name "nextcloud"  \
@@ -404,22 +376,22 @@ mycount=1
 
 for myip in $allipaddr
 do
-	sudo -u apache /usr/local/bin/php \
-	/var/www/html/nextcloud/occ \
+	sudo -u nginx /usr/local/bin/php \
+	/usr/share/nginx/html/nextcloud/occ \
 	config:system:set \
 	trusted_domains $mycount \
 	--value=$myip
 	mycount=$[mycount+1]
-	echo "- Nextcloud: http://$myip (Minio: http://$myip:8080)" >> /root/nextcloud-credentials.txt
+	echo "- http://$myip" >> /root/nextcloud-credentials.txt
 done
 echo "Final counter: $mycount" &>>$lgfile
 
-sudo -u apache /usr/local/bin/php \
-/var/www/html/nextcloud/occ \
+sudo -u nginx /usr/local/bin/php \
+/usr/share/nginx/html/nextcloud/occ \
 config:system:set \
 trusted_domains $mycount \
 --value=`hostname`
-echo "- Nextcloud: http://`hostname` (Minio: http://`hostname`:8080)" >> /root/nextcloud-credentials.txt
+echo "- http://`hostname`" >> /root/nextcloud-credentials.txt
 mycount=$[mycount+1]
 
 publicip=`curl http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null`
@@ -430,12 +402,12 @@ then
 	echo "No metadata-based public IP detected" &>>$lgfile
 else
 	echo $publicip
-	sudo -u apache /usr/local/bin/php \
-	/var/www/html/nextcloud/occ \
+	sudo -u nginx /usr/local/bin/php \
+	/usr/share/nginx/html/nextcloud/occ \
 	config:system:set \
 	trusted_domains $mycount \
 	--value=$publicip
-	echo "- Nextcloud: http://$publicip (Minio: http://$publicip:8080)" >> /root/nextcloud-credentials.txt
+	echo "- http://$publicip" >> /root/nextcloud-credentials.txt
 	mycount=$[mycount+1]
 fi
 
@@ -443,20 +415,20 @@ if [ -z $publichostname ]
 then
 	echo "No metadata-based public hostname detected" &>>$lgfile
 else
-	sudo -u apache /usr/local/bin/php \
-	/var/www/html/nextcloud/occ \
+	sudo -u nginx /usr/local/bin/php \
+	/usr/share/nginx/html/nextcloud/occ \
 	config:system:set \
 	trusted_domains $mycount \
 	--value=$publichostname
-	echo "- Nextcloud: http://$publichostname (Minio: http://$publichostname:8080)" >> /root/nextcloud-credentials.txt
+	echo "- http://$publichostname" >> /root/nextcloud-credentials.txt
 	mycount=$[mycount+1]
 fi
 
-cat /var/www/html/nextcloud/config/config.php > /root/config.php-original
+cat /usr/share/nginx/html/nextcloud/config/config.php > /root/config.php-original
 
-sed -i '$ d' /var/www/html/nextcloud/config/config.php
+sed -i '$ d' /usr/share/nginx/html/nextcloud/config/config.php
 
-cat <<EOF >>/var/www/html/nextcloud/config/config.php
+cat <<EOF >>/usr/share/nginx/html/nextcloud/config/config.php
   'filelocking.enabled' => true,
   'memcache.locking' => '\OC\Memcache\Redis',
   'memcache.local' => '\OC\Memcache\Redis',
@@ -466,53 +438,63 @@ cat <<EOF >>/var/www/html/nextcloud/config/config.php
     'timeout' => 0.0,
     'password' => '', // Optional, if not defined no password will be used.
   ),
-  'objectstore' => [
-    'class' => 'OC\\Files\\ObjectStore\\S3',
-    'arguments' => [
-      'bucket' => 'nextcloud',
-      'autocreate' => true,
-      'key'    => '$minioaccess',
-      'secret' => '$miniosecret',
-      'hostname' => '127.0.0.1',
-      'port' => 8080,
-      'use_ssl' => false,
-      'region' => 'optional',
-      'use_path_style' => true
-    ],
-  ],
 );
 EOF
 
-systemctl enable httpd
-systemctl restart httpd
+systemctl enable nginx
+systemctl restart nginx
 
-sudo -u apache /usr/local/bin/php \
-/var/www/html/nextcloud/occ \
+sudo -u nginx /usr/local/bin/php \
+/usr/share/nginx/html/nextcloud/occ \
 user:delete admin
 
 export OC_PASS="$nextcloudadminpass"
-su -s /bin/bash apache -c '/usr/local/bin/php \
-/var/www/html/nextcloud/occ \
+su -s /bin/bash nginx -c '/usr/local/bin/php \
+/usr/share/nginx/html/nextcloud/occ \
 user:add --password-from-env \
 --group="admin" \
 --display-name="NextCloud SuperAdmin" \
 admin
 '
 
-finalcheck=`sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/occ config:system:get version 2>&1|grep -c ^12.`
+cat<<EOF>/etc/cron.d/nextcloud-job-crontab
+#
+#
+# Nextcloud cron job
+#
+# Every 15 minutes
+#
+*/15 * * * * nginx /usr/bin/php -f /usr/share/nginx/html/nextcloud/cron.php
+#
+EOF
+
+yum -y install python2-certbot-nginx &>>$lgfile
+
+cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
+#
+#
+# Letsencrypt automated renewal
+#
+# Every day at 01:30am
+#
+30 01 * * * root /usr/bin/certbot renew > /var/log/le-renew.log 2>&1
+#
+EOF
+
+systemctl restart crond
+sudo -u nginx /usr/local/bin/php /usr/share/nginx/html/nextcloud/cron.php
+
+finalcheck=`sudo -u nginx /usr/local/bin/php /usr/share/nginx/html/nextcloud/occ config:system:get version 2>&1|grep -c ^12.`
 
 if [ $finalcheck == "1" ]
 then
-	export nextcloudversion=`sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/occ config:system:get version 2>&1`
+	export nextcloudversion=`sudo -u nginx /usr/local/bin/php /usr/share/nginx/html/nextcloud/occ config:system:get version 2>&1`
 	echo "NEXTCLOUD VERSION: $nextcloudversion" >> /root/nextcloud-credentials.txt
-	echo "Minio credentials:" >> /root/nextcloud-credentials.txt
-	echo "Access Key: $minioaccess" >> /root/nextcloud-credentials.txt
-	echo "Secret: $miniosecret" >> /root/nextcloud-credentials.txt
 	echo "Ready. Your nextcloud access credentials are stored in the file /root/nextcloud-credentials.txt:" &>>$lgfile
 	echo "" &>>$lgfile
 	cat /root/nextcloud-credentials.txt &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 else
-	echo "Nextcloud with minio-s3 installation failed" &>>$lgfile
+	echo "Nextcloud installation failed" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 fi

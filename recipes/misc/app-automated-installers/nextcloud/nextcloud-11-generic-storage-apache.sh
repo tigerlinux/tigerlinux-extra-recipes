@@ -4,8 +4,8 @@
 # tigerlinux@gmail.com
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
-# NextCloud 12 Automated Installation Script
-# Rel 1.0
+# NextCloud 11 Automated Installation Script - Apache version
+# Rel 1.6
 # For usage on centos7 64 bits machines.
 #
 
@@ -161,7 +161,6 @@ innodb_file_per_table = 1
 EOF
 
 mkdir -p /etc/systemd/system/mariadb.service.d/
-mkdir -p /etc/systemd/system/mariadb.service.d/
 cat <<EOF >/etc/systemd/system/mariadb.service.d/limits.conf
 [Service]
 LimitNOFILE=65535
@@ -255,9 +254,9 @@ sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf
 systemctl enable redis
 systemctl start redis
 
-wget https://download.nextcloud.com/server/releases/latest-12.zip -O /root/latest-12.zip &>>$lgfile
-unzip /root/latest-12.zip -d /var/www/html/ &>>$lgfile
-rm -f /root/latest-12.zip
+wget https://download.nextcloud.com/server/releases/latest-11.zip -O /root/latest-11.zip &>>$lgfile
+unzip /root/latest-11.zip -d /var/www/html/ &>>$lgfile
+rm -f /root/latest-11.zip
 
 cat <<EOF >/var/www/html/index.html
 <HTML>
@@ -382,7 +381,35 @@ user:add --password-from-env \
 admin
 '
 
-finalcheck=`sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/occ config:system:get version 2>&1|grep -c ^12.`
+yum -y install python-certbot-apache &>>$lgfile
+
+cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
+#
+#
+# Letsencrypt automated renewal
+#
+# Every day at 01:30am
+#
+30 01 * * * root /usr/bin/certbot renew > /var/log/le-renew.log 2>&1
+#
+EOF
+
+cat<<EOF>/etc/cron.d/nextcloud-job-crontab
+#
+#
+# Nextcloud cron job
+#
+# Every 15 minutes
+#
+*/15 * * * * apache /usr/bin/php -f /var/www/html/nextcloud/cron.php
+#
+EOF
+
+sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/cron.php
+
+systemctl reload crond
+
+finalcheck=`sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/occ config:system:get version 2>&1|grep -c ^11.`
 
 if [ $finalcheck == "1" ]
 then

@@ -5,8 +5,9 @@ Supported Operating Systems: Centos 7. Nextcloud release 11.
 
 ## Scripts included on this directory:
 
-- nextcloud-XX-generic-storage.sh: Nextcloud fully automated installer with standard storage (where XX is the nextcloud release).
-- nextcloud-XX-minios3-storage.sh: Nextcloud fully automated installer with minio-s3 based storage (where XX is the nextcloud release).
+- nextcloud-XX-generic-storage-apache.sh: Nextcloud fully automated installer with standard storage (where XX is the nextcloud release) - apache version.
+- nextcloud-XX-generic-storage-nginx.sh: Nextcloud fully automated installer with standard storage (where XX is the nextcloud release) - nginx version.
+- nextcloud-XX-minios3-storage-apache.sh: Nextcloud fully automated installer with minio-s3 based storage (where XX is the nextcloud release).
 
 
 ## Usage:
@@ -54,6 +55,11 @@ The script perform the following actions in the operating system:
 Depending on Internet access conditions, the script can take from 10 minutes to 20 minutes to complete.
 
 Please note that this script will disable both firewalld and selinux. If you want you can install them back after this script finish its run.
+
+
+## Apache vs Nginx:
+
+We don't have a preference here, but in general terms Nginx is faster than apache. Having said that, you'll probably find the ones using nginx faster. Note that the minio-s3 based ones are "exotic" as they combine nginx as a front-end for minio-s3 (serving all storage contents that way) and apache is just used as the "nextcloud" engine frontend.
 
 
 # GENERAL REQUIREMENTS:
