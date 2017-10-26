@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LEMP Server Installation Script
-# Rel 1.6
+# Rel 1.7
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -250,7 +250,8 @@ http {
  '\$status \$body_bytes_sent "\$http_referer" '
  '"\$http_user_agent" "\$http_x_forwarded_for"';
 
-  access_log  /var/log/nginx/access.log  main;
+ access_log  /var/log/nginx/access.log  main;
+ client_max_body_size 100M;
 
  sendfile            on;
  tcp_nopush          on;
@@ -269,7 +270,7 @@ http {
   server_name  _;
   #Uncomment the following line if you want to redirect your http site
   #to the https one.
-  #return 301 https://$server_name$request_uri;
+  #return 301 https://\$server_name\$request_uri;
   root /usr/share/nginx/html;
 
   # Load configuration files for the default server block.
