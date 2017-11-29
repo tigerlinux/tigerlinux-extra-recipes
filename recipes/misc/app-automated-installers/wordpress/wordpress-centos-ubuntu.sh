@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # Wordpress with Dockerized MariaDB 10.1 Installation Script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.3
+# Release 1.4
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -466,6 +466,8 @@ sed -r -i 's/exit\ 0//g' /etc/rc.local
 sed -r -i "s/\#\!\/bin\/sh.*/\#\!\/bin\/bash/g" /etc/rc.local
 sed -r -i "s/\#\!\/bin\/bash.*/\#\!\/bin\/bash/g" /etc/rc.local
 
+wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -O /usr/local/bin/wp
+chmod 755 /usr/local/bin/wp
 
 if [ `docker ps|grep -c mariadb-engine-docker` == "1" ] && [ -f /var/www/html/wp-config.php ]
 then

@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LEMP Server Installation Script
-# Rel 1.7
+# Rel 1.8
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -18,9 +18,7 @@ export debug="no"
 # Select your php version: Supported options:
 # 56 for "php 5.6"
 # 71 for "php" 7.1
-# export phpversion="71"
 # anything else for "distro" included php version
-# export phpversion="standard"
 export phpversion="71"
 # If you want phpmyadmin, let next variable to "yes"
 phpmyadmin="yes"
@@ -277,16 +275,16 @@ http {
   include /etc/nginx/default.d/*.conf;
 
   location / {
-    index index.php index.html index.htm;
-	# Un-comment the following commented rules if your site is running wordpress
-    #if (-f \$request_filename) {
-    # expires 30d;
-    # break;
-    #}
-    #if (!-e \$request_filename) {
-    #  rewrite ^(.+)\$ /index.php?q=\$1 last;
-    #}
-    location ~ ^/.+\.php {
+   index index.php index.html index.htm;
+   # Un-comment the following commented rules if your site is running wordpress
+   #if (-f \$request_filename) {
+   # expires 30d;
+   # break;
+   #}
+   #if (!-e \$request_filename) {
+   #  rewrite ^(.+)\$ /index.php?q=\$1 last;
+   #}
+   location ~ ^/.+\.php {
     fastcgi_param  SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
     fastcgi_index  index.php;
     fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
@@ -294,7 +292,7 @@ http {
     fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
     include fastcgi_params;
     fastcgi_pass 127.0.0.1:9000;
-  }
+   }
  }
 
  error_page 404 /404.html;
@@ -317,24 +315,24 @@ http {
   include /etc/nginx/default.d/*.conf;
 
   location / {
-    index index.php index.html index.htm;
-	# Un-comment the following commented rules if your site is running wordpress
-    #if (-f \$request_filename) {
-    # expires 30d;
-    # break;
-    #}
-    #if (!-e \$request_filename) {
-    #  rewrite ^(.+)\$ /index.php?q=\$1 last;
-    #}
-    location ~ ^/.+\.php {
-      fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
-      fastcgi_index  index.php;
-      fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
-      fastcgi_param PATH_INFO \$fastcgi_path_info;
-      fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
-      include fastcgi_params;
-      fastcgi_pass 127.0.0.1:9000;
-    }
+   index index.php index.html index.htm;
+   # Un-comment the following commented rules if your site is running wordpress
+   #if (-f \$request_filename) {
+   # expires 30d;
+   # break;
+   #}
+   #if (!-e \$request_filename) {
+   #  rewrite ^(.+)\$ /index.php?q=\$1 last;
+   #}
+   location ~ ^/.+\.php {
+     fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
+     fastcgi_index  index.php;
+     fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
+     fastcgi_param PATH_INFO \$fastcgi_path_info;
+     fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
+     include fastcgi_params;
+     fastcgi_pass 127.0.0.1:9000;
+   }
   }
 
   error_page 404 /404.html;
@@ -454,7 +452,6 @@ EOF
 fi
 
 systemctl enable nginx
-systemctl restart nginx
 
 yum -y install python2-certbot-nginx &>>$lgfile
 
@@ -469,7 +466,10 @@ cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
 #
 EOF
 
-systemctl reload crond
+systemctl restart nginx crond
+
+wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -O /usr/local/bin/wp
+chmod 755 /usr/local/bin/wp
 
 finalcheck=`curl --write-out %{http_code} --silent --output /dev/null http://127.0.0.1/|grep -c 200`
 

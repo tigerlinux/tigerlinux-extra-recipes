@@ -22,6 +22,11 @@ systemctl stop docker-mariadb-server
 systemctl status docker-mariadb-server
 ```
 
+# WORDPRESS CLIENT
+
+The "wp-cli" command line utility is included here as "/usr/local/bin/wp". You can use it if you want to admin your wordpress site from the command line. More information at: http://wp-cli.org/
+
+
 # FIREWALLD/UFW
 
 Depenging on the distro (centos7 or ubuntu1604lts) firewalld/ufw will be installed and configured. The only ports to open will be:

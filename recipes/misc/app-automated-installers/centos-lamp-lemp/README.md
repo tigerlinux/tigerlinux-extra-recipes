@@ -44,6 +44,11 @@ Both scripts installs and configures "phpmyadmin" as a controllable option by th
 Both scripts install "certbot" (letsencrypt software) and set the required crontab for automated renewall. The "ssl" certificate on both nginx/apache is "self-signed". Use "certbot" to adquire a valid certificate from letsencrypt.
 
 
+# WORDPRESS CLIENT
+
+The "wp-cli" command line utility is included here as "/usr/local/bin/wp". You can use it if you want to install/admin wordpress from the command line as part of your LAMP/LEMP server. More information at: http://wp-cli.org/
+
+
 # OPENED PORTS
 
 FirewallD allow traffic for the following ports only (input traffic):

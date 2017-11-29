@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LAMP Server Installation Script
-# Rel 1.4
+# Rel 1.5
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -18,9 +18,7 @@ export debug="no"
 # Select your php version: Supported options:
 # 56 for "php 5.6"
 # 71 for "php" 7.1
-# export phpversion="71"
 # anything else for "distro" included php version
-# export phpversion="standard"
 export phpversion="71"
 # If you want phpmyadmin, let next variable to "yes"
 phpmyadmin="yes"
@@ -328,7 +326,6 @@ EOF
 fi
 
 systemctl enable httpd
-systemctl restart httpd
 
 cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
 #
@@ -341,7 +338,10 @@ cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
 #
 EOF
 
-systemctl reload crond
+systemctl restart httpd crond
+
+wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -O /usr/local/bin/wp
+chmod 755 /usr/local/bin/wp
 
 finalcheck=`curl --write-out %{http_code} --silent --output /dev/null http://127.0.0.1/|grep -c 200`
 
