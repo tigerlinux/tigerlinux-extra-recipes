@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LAMP Server Installation Script
-# Rel 1.5
+# Rel 1.6
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -14,7 +14,6 @@ OSFlavor='unknown'
 lgfile="/var/log/lamp-server-automated-installer.log"
 credfile="/root/lamp-server-mariadb-credentials.txt"
 echo "Start Date/Time: `date`" &>>$lgfile
-export debug="no"
 # Select your php version: Supported options:
 # 56 for "php 5.6"
 # 71 for "php" 7.1
@@ -116,11 +115,6 @@ baseurl = http://yum.mariadb.org/10.1/centos7-amd64
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
-
-if [ $debug == "yes" ]
-then
-	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/mariadb101-amd64.repo -O /etc/yum.repos.d/mariadb101.repo
-fi
 
 yum -y update --exclude=kernel* &>>$lgfile
 yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile

@@ -4,23 +4,16 @@
 # tigerlinux@gmail.com
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
-# LEMP Server Installation Script
-# Rel 1.9
+# PHPIPAM Server Installation Script
+# Rel 1.0
 # For usage on centos7 64 bits machines.
-# (includes phpmyadmin installation as an option)
+#
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 OSFlavor='unknown'
-lgfile="/var/log/lemp-server-automated-installer.log"
-credfile="/root/lemp-server-mariadb-credentials.txt"
+lgfile="/var/log/phpipam-server-automated-installer.log"
+credfile="/root/phpipam-server-credentials.txt"
 echo "Start Date/Time: `date`" &>>$lgfile
-# Select your php version: Supported options:
-# 56 for "php 5.6"
-# 71 for "php" 7.1
-# anything else for "distro" included php version
-export phpversion="71"
-# If you want phpmyadmin, let next variable to "yes"
-phpmyadmin="yes"
 
 if [ -f /etc/centos-release ]
 then
@@ -54,7 +47,8 @@ then
 fi
 
 export mariadbpass=`openssl rand -hex 10`
-export mariadbip='0.0.0.0'
+export ipamdbpass=`openssl rand -hex 10`
+export mariadbip='127.0.0.1'
 
 cpus=`lscpu -a --extended|grep -ic yes`
 instram=`free -m -t|grep -i mem:|awk '{print $2}'`
@@ -63,7 +57,7 @@ avvar=`df -k --output=avail /var|tail -n 1`
 
 if [ $cpus -lt "1" ] || [ $instram -lt "480" ] || [ $avusr -lt "5000000" ] || [ $avvar -lt "5000000" ]
 then
-	echo "Not enough hardware for a LEMP Server. Aborting!" &>>$lgfile
+	echo "Not enough hardware for a PHPIPAM Server. Aborting!" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
@@ -158,6 +152,10 @@ DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.
 DROP DATABASE IF EXISTS test;
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '$mariadbpass' WITH GRANT OPTION;
 DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
+CREATE DATABASE IF NOT EXISTS phpipam default character set utf8;
+GRANT ALL ON phpipam.* TO 'phpipam'@'%' IDENTIFIED BY '$ipamdbpass';
+GRANT ALL ON phpipam.* TO 'phpipam'@'127.0.0.1' IDENTIFIED BY '$ipamdbpass';
+GRANT ALL ON phpipam.* TO 'phpipam'@'localhost' IDENTIFIED BY '$ipamdbpass';
 FLUSH PRIVILEGES;
 EOF
 
@@ -178,32 +176,21 @@ echo "Database credentials:" > $credfile
 echo "User: root" >> $credfile
 echo "Password: $mariadbpass" >> $credfile
 echo "Listen IP: $mariadbip" >> $credfile
+echo "IPAM Database: phpipam" >> $credfile
+echo "IPAM DB User: phpipam" >> $credfile
+echo "IPAM DB User Password: $ipamdbpass" >> $credfile
+echo "IPAM User: Admin" >> $credfile
+echo "IPAM Initial password: ipamadmin" >> $credfile
+echo "URL: http://YOUR_SERVER_IP" >> $credfile
+echo "URL: httpS://YOUR_SERVER_IP" >> $credfile
 
-case $phpversion in
-56)
-	yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-	yum -y update --exclude=kernel* &>>$lgfile
-	yum -y erase php-common
-	yum -y install nginx php56w php56w-opcache php56w-pear \
-	php56w-pdo php56w-xml php56w-pdo_dblib php56w-mbstring \
-	php56w-mysqlnd php56w-mcrypt php56w-fpm php56w-bcmath \
-	php56w-gd php56w-cli php56w-json &>>$lgfile
-	;;
-71)
-	yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-	yum -y update --exclude=kernel* &>>$lgfile
-	yum -y erase php-common
-	yum -y install nginx php71w php71w-opcache php71w-pear \
-	php71w-pdo php71w-xml php71w-pdo_dblib php71w-mbstring \
-	php71w-mysqlnd php71w-mcrypt php71w-fpm php71w-bcmath \
-	php71w-gd php71w-cli php71w-json &>>$lgfile
-	;;
-*)
-	yum -y update --exclude=kernel* &>>$lgfile
-	yum -y install nginx php-common php-fpm php-pear php-opcache php-pdo \
-	php-mbstring php-mysqlnd php-xml php-bcmath php-json php-cli php-gd &>>$lgfile
-	;;
-esac
+yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+yum -y update --exclude=kernel* &>>$lgfile
+yum -y erase php-common
+yum -y install nginx php71w php71w-opcache php71w-pear \
+php71w-pdo php71w-xml php71w-pdo_dblib php71w-mbstring \
+php71w-mysqlnd php71w-mcrypt php71w-fpm php71w-bcmath \
+php71w-gd php71w-cli php71w-json php71w-ldap &>>$lgfile
 
 crudini --set /etc/php.ini PHP upload_max_filesize 100M
 crudini --set /etc/php.ini PHP post_max_size 100M
@@ -269,15 +256,15 @@ http {
   include /etc/nginx/default.d/*.conf;
 
   location / {
+   # try_files \$uri \$uri/ /index.php?\$args;
    index index.php index.html index.htm;
-   # Un-comment the following commented rules if your site is running wordpress
-   #if (-f \$request_filename) {
-   # expires 30d;
-   # break;
-   #}
-   #if (!-e \$request_filename) {
-   #  rewrite ^(.+)\$ /index.php?q=\$1 last;
-   #}
+   if (-f \$request_filename) {
+    expires 30d;
+    break;
+   }
+   if (!-e \$request_filename) {
+     rewrite ^(.+)\$ /index.php?q=\$1 last;
+   }
    location ~ ^/.+\.php {
     fastcgi_param  SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
     fastcgi_index  index.php;
@@ -287,14 +274,6 @@ http {
     include fastcgi_params;
     fastcgi_pass 127.0.0.1:9000;
    }
- }
-
- error_page 404 /404.html;
- location = /40x.html {
- }
-
- error_page 500 502 503 504 /50x.html;
-  location = /50x.html {
   }
  }
  server {
@@ -309,15 +288,15 @@ http {
   include /etc/nginx/default.d/*.conf;
 
   location / {
+   # try_files \$uri \$uri/ /index.php?\$args;
    index index.php index.html index.htm;
-   # Un-comment the following commented rules if your site is running wordpress
-   #if (-f \$request_filename) {
-   # expires 30d;
-   # break;
-   #}
-   #if (!-e \$request_filename) {
-   #  rewrite ^(.+)\$ /index.php?q=\$1 last;
-   #}
+   if (-f \$request_filename) {
+    expires 30d;
+    break;
+   }
+   if (!-e \$request_filename) {
+     rewrite ^(.+)\$ /index.php?q=\$1 last;
+   }
    location ~ ^/.+\.php {
      fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
      fastcgi_index  index.php;
@@ -327,14 +306,6 @@ http {
      include fastcgi_params;
      fastcgi_pass 127.0.0.1:9000;
    }
-  }
-
-  error_page 404 /404.html;
-  location = /40x.html {
-  }
-
-  error_page 500 502 503 504 /50x.html;
-  location = /50x.html {
   }
  }
 }
@@ -357,95 +328,29 @@ openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/ngin
 chmod 0600 /etc/pki/nginx/private/server.key
 chown nginx.nginx /etc/pki/nginx/private/server.key
 
-if [ $phpmyadmin == "yes" ]
-then
-	export phpmyadminpass=`openssl rand -hex 10`
-	wget https://files.phpmyadmin.net/phpMyAdmin/4.7.4/phpMyAdmin-4.7.4-all-languages.tar.gz -O /root/phpMyAdmin-4.7.4-all-languages.tar.gz
-	mkdir -p /var/www
-	tar -xzvf /root/phpMyAdmin-4.7.4-all-languages.tar.gz -C /var/www/
-	rm -f /root/phpMyAdmin-4.7.4-all-languages.tar.gz
-	mv /var/www/phpMyAdmin* /var/www/phpmyadmin
-	cat<<EOF>/var/www/phpmyadmin/config.inc.php
-<?php
-\$cfg['blowfish_secret'] = '`openssl rand -hex 16`';
-\$i = 0;
-\$i++;
-\$cfg['Servers'][\$i]['auth_type'] = 'cookie';
-\$cfg['Servers'][\$i]['host'] = '127.0.0.1';
-\$cfg['Servers'][\$i]['compress'] = false;
-\$cfg['Servers'][\$i]['AllowNoPassword'] = false;
-\$cfg['UploadDir'] = '/var/www/phpmyadmin/uploads';
-\$cfg['SaveDir'] = '/var/www/phpmyadmin/saves';
-\$cfg['Servers'][\$i]['controlhost'] = '127.0.0.1';
-\$cfg['Servers'][\$i]['controlport'] = '3306';
-\$cfg['Servers'][\$i]['controluser'] = 'phpmyadminuser';
-\$cfg['Servers'][\$i]['controlpass'] = '$phpmyadminpass';
-\$cfg['Servers'][\$i]['pmadb'] = 'phpmyadmin';
-\$cfg['Servers'][\$i]['bookmarktable'] = 'pma__bookmark';
-\$cfg['Servers'][\$i]['relation'] = 'pma__relation';
-\$cfg['Servers'][\$i]['table_info'] = 'pma__table_info';
-\$cfg['Servers'][\$i]['table_coords'] = 'pma__table_coords';
-\$cfg['Servers'][\$i]['pdf_pages'] = 'pma__pdf_pages';
-\$cfg['Servers'][\$i]['column_info'] = 'pma__column_info';
-\$cfg['Servers'][\$i]['history'] = 'pma__history';
-\$cfg['Servers'][\$i]['table_uiprefs'] = 'pma__table_uiprefs';
-\$cfg['Servers'][\$i]['tracking'] = 'pma__tracking';
-\$cfg['Servers'][\$i]['userconfig'] = 'pma__userconfig';
-\$cfg['Servers'][\$i]['recent'] = 'pma__recent';
-\$cfg['Servers'][\$i]['favorite'] = 'pma__favorite';
-\$cfg['Servers'][\$i]['users'] = 'pma__users';
-\$cfg['Servers'][\$i]['usergroups'] = 'pma__usergroups';
-\$cfg['Servers'][\$i]['navigationhiding'] = 'pma__navigationhiding';
-\$cfg['Servers'][\$i]['savedsearches'] = 'pma__savedsearches';
-\$cfg['Servers'][\$i]['central_columns'] = 'pma__central_columns';
-\$cfg['Servers'][\$i]['designer_settings'] = 'pma__designer_settings';
-\$cfg['Servers'][\$i]['export_templates'] = 'pma__export_templates';
-EOF
-	mkdir -p /var/www/phpmyadmin/uploads
-	mkdir -p /var/www/phpmyadmin/saves
-	chown -R root.root /var/www/phpmyadmin
-	chown -R nginx.nginx /var/www/phpmyadmin/uploads /var/www/phpmyadmin/saves
-	
-	cat<<EOF >/root/os-db.sql
-CREATE DATABASE IF NOT EXISTS phpmyadmin default character set utf8;
-GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'%' IDENTIFIED BY '$phpmyadminpass';
-GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'127.0.0.1' IDENTIFIED BY '$phpmyadminpass';
-GRANT ALL ON phpmyadmin.* TO 'phpmyadminuser'@'localhost' IDENTIFIED BY '$phpmyadminpass';
-FLUSH PRIVILEGES;
-EOF
-	mysql < /root/os-db.sql
-	mysql -u root -h 127.0.0.1 -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` < /root/os-db.sql
-	mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep password /root/.my.cnf |cut -d\" -f2` < /root/os-db.sql
-
-	mysql -u root -h 127.0.0.1 -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` < /var/www/phpmyadmin/sql/create_tables.sql
-	mysql < /var/www/phpmyadmin/sql/create_tables.sql
-	mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep password /root/.my.cnf |cut -d\" -f2` < /var/www/phpmyadmin/sql/create_tables.sql
-	
-	echo "PHPMYADMIN URL: http://`ip route get 1 | awk '{print $NF;exit}'`/phpmyadmin" >> $credfile
-	rm -f /root/os-db.sql
-	cat<<EOF>/etc/nginx/default.d/phpmyadmin.conf
-location /phpmyadmin {
-  root /var/www/;
-  index index.php index.html index.htm;
-    location ~ ^/phpmyadmin/(.+\.php)$ {
-    try_files \$uri =404;
-    root /var/www/;
-    fastcgi_pass 127.0.0.1:9000;
-    fastcgi_index index.php;
-    fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-    include fastcgi_params;
-  }
-  location ~* ^/phpmyadmin/(.+\.(jpg|jpeg|gif|css|png|js|ico|html|xml|txt))$ {
-    root /var/www/;
-  }
-}
-location /phpMyAdmin {
-  rewrite ^/* /phpmyadmin last;
-}
-EOF
-fi
-
 systemctl enable nginx
+
+mv /usr/share/nginx/html /usr/share/nginx/html-old
+git clone https://github.com/phpipam/phpipam.git /usr/share/nginx/html
+cd /usr/share/nginx/html
+git checkout 1.3
+cd /
+chown -R nginx.nginx /usr/share/nginx/html
+find /usr/share/nginx/html -name "*" -type f -exec chmod 644 "{}" ";"
+find /usr/share/nginx/html -name "*" -type d -exec chmod 755 "{}" ";"
+
+# mysql phpipam < /usr/share/nginx/html/db/SCHEMA.sql
+# mysql -u root -h 127.0.0.1 -P 3306 -p`grep password /root/.my.cnf |cut -d\" -f2` phpipam < /usr/share/nginx/html/db/SCHEMA.sql
+mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep password /root/.my.cnf |cut -d\" -f2` phpipam < /usr/share/nginx/html/db/SCHEMA.sql
+
+cp /usr/share/nginx/html/config.dist.php /usr/share/nginx/html/config.php
+chown nginx.nginx /usr/share/nginx/html/config.php
+
+rm -rf /usr/share/nginx/html/.git*
+
+
+sed -r -i "s/phpipamadmin/$ipamdbpass/g" /usr/share/nginx/html/config.php
+sed -r -i 's/localhost/127.0.0.1/g' /usr/share/nginx/html/config.php
 
 yum -y install python2-certbot-nginx &>>$lgfile
 
@@ -460,20 +365,17 @@ cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
 #
 EOF
 
-systemctl restart nginx crond
+systemctl restart php-fpm nginx crond
 
-wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -O /usr/local/bin/wp
-chmod 755 /usr/local/bin/wp
-
-finalcheck=`curl --write-out %{http_code} --silent --output /dev/null http://127.0.0.1/|grep -c 200`
+finalcheck=`curl --write-out %{http_code} --silent --output /dev/null http://127.0.0.1/|grep -c 302`
 
 if [ $finalcheck == "1" ]
 then
-	echo "Ready. Your LEMP Server is ready. See your database credentiales at $credfile" &>>$lgfile
+	echo "Ready. Your PHPIPAM Server is ready. See your database credentiales at $credfile" &>>$lgfile
 	echo "" &>>$lgfile
 	cat $credfile &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 else
-	echo "LEMP Server install failed" &>>$lgfile
+	echo "PHPIPAM Server install failed" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 fi
