@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # PHPIPAM Server Installation Script
-# Rel 1.0
+# Rel 1.1
 # For usage on centos7 64 bits machines.
 #
 
@@ -212,7 +212,7 @@ systemctl restart php-fpm
 
 openssl dhparam -out /etc/nginx/dhparams.pem 2048 &>>$lgfile
 
-cat <<EOF >/etc/nginx/nginx.conf
+cat <<EOF>/etc/nginx/nginx.conf
 user nginx;
 worker_processes auto;
 error_log /var/log/nginx/error.log;
@@ -255,17 +255,35 @@ http {
   # Load configuration files for the default server block.
   include /etc/nginx/default.d/*.conf;
 
+  location /css {
+    try_files \$uri \$uri/ =404;
+  }
+
+  location /js {
+    try_files \$uri \$uri/ =404;
+  }
+
   location / {
-   # try_files \$uri \$uri/ /index.php?\$args;
-   index index.php index.html index.htm;
-   if (-f \$request_filename) {
-    expires 30d;
-    break;
-   }
-   if (!-e \$request_filename) {
-     rewrite ^(.+)\$ /index.php?q=\$1 last;
-   }
-   location ~ ^/.+\.php {
+    index index.php;
+    rewrite ^/login/dashboard/?\$ /dashboard/ redirect;
+    rewrite ^/logout/dashboard/?\$ /dashboard/ redirect;
+    rewrite ^/tools/search/(.*)\$ /index.php?page=tools&section=search&ip=\$1 last;
+    rewrite ^/(.*)/(.*)/(.*)/(.*)/([^/]+)/? /index.php?page=\$1&section=\$2&subnetId=\$3&sPage=\$4&ipaddrid=\$5 last;
+    rewrite ^/(.*)/(.*)/(.*)/([^/]+)/? /index.php?page=\$1&section=\$2&subnetId=\$3&sPage=\$4 last;
+    rewrite ^/(.*)/(.*)/([^/]+)/? /index.php?page=\$1&section=\$2&subnetId=\$3 last;
+    rewrite ^/(.*)/([^/]+)/? /index.php?page=\$1&section=\$2 last;
+    rewrite ^/([^/]+)/? /index.php?page=\$1 last;
+  }
+
+  location /api {
+    rewrite ^/api/(.*)/(.*)/(.*)/(.*)/(.*) /api/index.php?app_id=\$1&controller=\$2&id=\$3&id2=\$4&id3=\$5 last;
+    rewrite ^/api/(.*)/(.*)/(.*)/(.*) /api/index.php?app_id=\$1&controller=\$2&id=\$3&id2=\$4 last;
+    rewrite ^/api/(.*)/(.*)/(.*) /api/index.php?app_id=\$1&controller=\$2&id=\$3 last;
+    rewrite ^/api/(.*)/(.*) /api/index.php?app_id=\$1&controller=\$2 last;
+    rewrite ^/api/(.*) /api/index.php?app_id=\$1 last;
+  }
+
+  location ~ ^/.+\.php {
     fastcgi_param  SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
     fastcgi_index  index.php;
     fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
@@ -273,9 +291,9 @@ http {
     fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
     include fastcgi_params;
     fastcgi_pass 127.0.0.1:9000;
-   }
   }
  }
+
  server {
   listen 443 ssl http2 default_server;
   listen [::]:443 ssl http2 default_server;
@@ -287,29 +305,48 @@ http {
 
   include /etc/nginx/default.d/*.conf;
 
+  location /css {
+    try_files \$uri \$uri/ =404;
+  }
+
+  location /js {
+    try_files \$uri \$uri/ =404;
+  }
+
   location / {
-   # try_files \$uri \$uri/ /index.php?\$args;
-   index index.php index.html index.htm;
-   if (-f \$request_filename) {
-    expires 30d;
-    break;
-   }
-   if (!-e \$request_filename) {
-     rewrite ^(.+)\$ /index.php?q=\$1 last;
-   }
-   location ~ ^/.+\.php {
-     fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
-     fastcgi_index  index.php;
-     fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
-     fastcgi_param PATH_INFO \$fastcgi_path_info;
-     fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
-     include fastcgi_params;
-     fastcgi_pass 127.0.0.1:9000;
-   }
+    index index.php;
+    rewrite ^/login/dashboard/?\$ /dashboard/ redirect;
+    rewrite ^/logout/dashboard/?\$ /dashboard/ redirect;
+    rewrite ^/tools/search/(.*)\$ /index.php?page=tools&section=search&ip=\$1 last;
+    rewrite ^/(.*)/(.*)/(.*)/(.*)/([^/]+)/? /index.php?page=\$1&section=\$2&subnetId=\$3&sPage=\$4&ipaddrid=\$5 last;
+    rewrite ^/(.*)/(.*)/(.*)/([^/]+)/? /index.php?page=\$1&section=\$2&subnetId=\$3&sPage=\$4 last;
+    rewrite ^/(.*)/(.*)/([^/]+)/? /index.php?page=\$1&section=\$2&subnetId=\$3 last;
+    rewrite ^/(.*)/([^/]+)/? /index.php?page=\$1&section=\$2 last;
+    rewrite ^/([^/]+)/? /index.php?page=\$1 last;
+  }
+ 
+  location /api {
+    index index.php;
+    rewrite ^/api/(.*)/(.*)/(.*)/(.*)/(.*) /api/index.php?app_id=\$1&controller=\$2&id=\$3&id2=\$4&id3=\$5 last;
+    rewrite ^/api/(.*)/(.*)/(.*)/(.*) /api/index.php?app_id=\$1&controller=\$2&id=\$3&id2=\$4 last;
+    rewrite ^/api/(.*)/(.*)/(.*) /api/index.php?app_id=\$1&controller=\$2&id=\$3 last;
+    rewrite ^/api/(.*)/(.*) /api/index.php?app_id=\$1&controller=\$2 last;
+    rewrite ^/api/(.*) /api/index.php?app_id=\$1 last;
+  }
+
+  location ~ ^/.+\.php {
+    fastcgi_param  SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+    fastcgi_index  index.php;
+    fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
+    fastcgi_param PATH_INFO \$fastcgi_path_info;
+    fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
+    include fastcgi_params;
+    fastcgi_pass 127.0.0.1:9000;
   }
  }
 }
 EOF
+
 
 cat <<EOF>/etc/nginx/default.d/sslconfig.conf
 ssl_session_cache shared:SSL:1m;
