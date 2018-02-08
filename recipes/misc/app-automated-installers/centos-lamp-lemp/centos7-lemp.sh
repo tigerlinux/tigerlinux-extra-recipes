@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LEMP Server Installation Script
-# Rel 1.9
+# Rel 1.10
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -184,7 +184,7 @@ case $phpversion in
 	yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
 	yum -y update --exclude=kernel* &>>$lgfile
 	yum -y erase php-common
-	yum -y install nginx php56w php56w-opcache php56w-pear \
+	yum -y install nginx php56w-opcache php56w-pear \
 	php56w-pdo php56w-xml php56w-pdo_dblib php56w-mbstring \
 	php56w-mysqlnd php56w-mcrypt php56w-fpm php56w-bcmath \
 	php56w-gd php56w-cli php56w-json &>>$lgfile
@@ -193,7 +193,7 @@ case $phpversion in
 	yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
 	yum -y update --exclude=kernel* &>>$lgfile
 	yum -y erase php-common
-	yum -y install nginx php71w php71w-opcache php71w-pear \
+	yum -y install nginx php71w-opcache php71w-pear \
 	php71w-pdo php71w-xml php71w-pdo_dblib php71w-mbstring \
 	php71w-mysqlnd php71w-mcrypt php71w-fpm php71w-bcmath \
 	php71w-gd php71w-cli php71w-json &>>$lgfile

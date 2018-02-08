@@ -5,17 +5,15 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # OpenStack bootstrap script - SINGLE-NIC Installation mode
-# Rel 1.1
+# Rel 1.2
 # For usage on centos7 64 bits machines with a single usable NIC
 # (bonded NIC's supported too - specially those from Packet.net)
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 OSFlavor='unknown'
-debug="no"
 lgfile="/var/log/aio-openstack-installer.log"
 echo "Start Date/Time: `date`" &>>$lgfile
-echo "$debug" > /root/os-installer-debug-mode.txt
 
 primarynic=`ip route get 1|grep dev|awk '{print $5}'`
 primaryip=`ip route get 1 | awk '{print $NF;exit}'`
@@ -111,15 +109,7 @@ done
 yum -y clean all
 modprobe loop
 
-yum -y install epel-release centos-release-openstack-ocata &>>$lgfile
-if [ $debug == "yes" ]
-then
-	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/CentOS-Ceph-Jewel.repo -O /etc/yum.repos.d/CentOS-Ceph-Jewel.repo
-	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/CentOS-OpenStack-ocata.repo -O /etc/yum.repos.d/CentOS-OpenStack-ocata.repo
-	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/CentOS-QEMU-EV.repo -O /etc/yum.repos.d/CentOS-QEMU-EV.repo
-	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/CentOS-fasttrack.repo -O /etc/yum.repos.d/CentOS-fasttrack.repo
-	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/epel.repo -O /etc/yum.repos.d/epel.repo
-fi
+yum -y install epel-release centos-release-openstack-pike &>>$lgfile
 yum clean all
 
 cat <<EOF >/etc/sysctl.d/10-openstack-sysctl.conf
@@ -203,7 +193,7 @@ cat <<EOF >/etc/sysconfig/modules/loop.modules
 EOF
 chmod 755 /etc/sysconfig/modules/loop.modules
 
-osinstaller="https://github.com/tigerlinux/openstack-ocata-installer-centos7.git"
+osinstaller="https://github.com/tigerlinux/openstack-pike-installer-centos7.git"
 
 git clone $osinstaller /usr/local/osinstaller
 
@@ -272,7 +262,6 @@ cat <<EOF >/root/final-script.sh
 #!/bin/bash
 #
 export osadminpass=`cat /root/osadminpass.txt`
-export debug=`cat /root/os-installer-debug-mode.txt`
 export lgfile="/var/log/aio-openstack-installer.log"
 echo "OpenStack osadmin user password: \$osadminpass"
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -289,14 +278,8 @@ fi
 
 source /root/keystonerc_fulladmin
 
-if [ $debug == "yes" ]
-then
-	climacent="http://www.gatuvelus.home/install-images/Genericloud/CentOS-7-x86_64-GenericCloud.qcow2"
-	climaubnt="http://www.gatuvelus.home/install-images/Genericloud/xenial-server-cloudimg-amd64-disk1.qcow2"
-else
-	climacent="http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
-	climaubnt="http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
-fi
+climacent="http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
+climaubnt="http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
 
 mkdir /var/os-images
 wget $climacent -O /var/os-images/CentOS-7-x86_64-GenericCloud.qcow2

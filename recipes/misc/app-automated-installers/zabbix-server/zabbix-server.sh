@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # Zabbix Server Automated Installation Script
-# Rel 1.3
+# Rel 1.4
 # For usage on centos7 64 bits machines.
 #
 
@@ -14,7 +14,6 @@ OSFlavor='unknown'
 lgfile="/var/log/zabbixserver-automated-installer.log"
 credentialsfile="/root/zabbix-access-info.txt"
 echo "Start Date/Time: `date`" &>>$lgfile
-debug="no"
 
 if [ -f /etc/centos-release ]
 then
@@ -109,11 +108,6 @@ baseurl = http://yum.mariadb.org/10.1/centos7-amd64
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
-
-if [ $debug == "yes" ]
-then
-	wget http://mirror.gatuvelus.home/cfgs/repos/centos7/mariadb101-amd64.repo -O /etc/yum.repos.d/mariadb101.repo
-fi
 
 yum -y update --exclude=kernel* &>>$lgfile
 yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile

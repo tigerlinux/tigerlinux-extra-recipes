@@ -5,16 +5,14 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # OpenStack bootstrap script - systemd-installer mode
-# Rel 1.1
+# Rel 1.2
 # For usage on ubuntu1604lts 64 bits machines.
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 OSFlavor='unknown'
-debug="no"
 lgfile="/var/log/aio-openstack-installer.log"
 echo "Start Date/Time: `date`" &>>$lgfile
-echo "$debug" > /root/os-installer-debug-mode.txt
 
 if [ -f /etc/debian_version ]
 then
@@ -107,12 +105,8 @@ fi
 
 apt-get -y install software-properties-common &>>$lgfile
 apt-get -y install ubuntu-cloud-keyring &>>$lgfile
-add-apt-repository -y cloud-archive:ocata &>>$lgfile
+add-apt-repository -y cloud-archive:pike &>>$lgfile
 
-if [ $debug == "yes" ]
-then
-	wget http://mirror.gatuvelus.home/cfgs/repos/ubuntu1604lts/ubuntu-cloud-archive-ocata-xenial.list -O /etc/apt/sources.list.d/cloudarchive-ocata.list
-fi
 apt-get -y update &>>$lgfile
 
 cat <<EOF >/etc/sysctl.d/10-openstack-sysctl.conf
@@ -171,7 +165,7 @@ then
 	echo "loop" >> /etc/modules
 fi
 	
-osinstaller="https://github.com/tigerlinux/openstack-ocata-installer-ubuntu1604lts.git"
+osinstaller="https://github.com/tigerlinux/openstack-pike-installer-ubuntu1604lts.git"
 
 git clone $osinstaller /usr/local/osinstaller
 
@@ -239,7 +233,6 @@ cat <<EOF >/root/final-script.sh
 #
 export dummynetwork=`route -n|grep br-dummy0|awk '{print $1}'|cut -d. -f1,2,3|grep -v ^169.254`
 export osadminpass=`cat /root/osadminpass.txt`
-export debug=`cat /root/os-installer-debug-mode.txt`
 export lgfile="/var/log/aio-openstack-installer.log"
 echo "OpenStack osadmin user password: \$osadminpass"
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -273,14 +266,8 @@ echo "WantedBy=multi-user.target" >> /etc/systemd/system/openstack-automated.ser
 systemctl daemon-reload
 systemctl enable openstack-automated.service
 
-if [ $debug == "yes" ]
-then
-	climacent="http://www.gatuvelus.home/install-images/Genericloud/CentOS-7-x86_64-GenericCloud.qcow2"
-	climaubnt="http://www.gatuvelus.home/install-images/Genericloud/xenial-server-cloudimg-amd64-disk1.qcow2"
-else
-	climacent="http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
-	climaubnt="http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
-fi
+climacent="http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
+climaubnt="http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
 
 mkdir /var/os-images
 wget $climacent -O /var/os-images/CentOS-7-x86_64-GenericCloud.qcow2

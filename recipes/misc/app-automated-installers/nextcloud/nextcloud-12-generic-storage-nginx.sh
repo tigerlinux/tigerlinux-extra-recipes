@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # NextCloud 12 Automated Installation Script - Nginx version
-# Rel 1.0
+# Rel 1.1
 # For usage on centos7 64 bits machines.
 #
 
@@ -164,7 +164,7 @@ rm -f /root/os-db.sql
 yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
 yum -y update --exclude=kernel* &>>$lgfile
 yum -y erase php-common
-yum -y install nginx php71w php71w-opcache \
+yum -y install nginx php71w-opcache \
 php71w-pear php71w-pdo php71w-xml php71w-pdo_dblib \
 php71w-mbstring php71w-mysqlnd php71w-mcrypt php71w-fpm \
 php71w-bcmath php71w-gd php71w-cli php71w-ldap \
