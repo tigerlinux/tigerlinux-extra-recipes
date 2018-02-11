@@ -4,8 +4,8 @@
 # tigerlinux@gmail.com
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
-# NextCloud 12 Automated Installation Script - Nginx version
-# Rel 1.2
+# NextCloud 13 Automated Installation Script - Apache version
+# Rel 1.0
 # For usage on centos7 64 bits machines.
 #
 
@@ -91,6 +91,45 @@ done
 
 mkdir -p /var/nextcloud-sto-data
 
+cloudconfigdrive=`grep cloudconfig /etc/fstab |grep -v swap|awk '{print $1}'`
+if [ $cloudconfigdrive ]
+then
+	umount $cloudconfigdrive
+	cat /etc/fstab > /etc/fstab.backup-original
+	cat /etc/fstab|egrep -v $cloudconfigdrive > /etc/fstab.pre-cloudconfigdrive
+	cat /etc/fstab.pre-cloudconfigdrive > /etc/fstab
+fi
+
+devicelist=`lsblk -do NAME,TYPE -nl -e1,2,11|grep disk|grep -v drbd|awk '{print $1}'`
+
+nxsto=''
+for blkst in $devicelist
+do
+	if [ `lsblk -do NAME,TYPE|grep -v NAME|grep disk|awk '{print $1}'|grep -v da|grep -c ^$blkst` == "1" ] \
+	&& [ `blkid |grep $blkst|grep -ci swap` == 0 ] \
+	&& [ `grep -v cloudconfig /etc/fstab |grep -ci ^/dev/$blkst` == 0 ] \
+	&& [ `pvdisplay|grep -ci /dev/$blkst` == 0 ] \
+	&& [ `df -h|grep -ci ^/dev/$blkst` == 0 ]
+	then
+		echo "Device $blkst usable" &>>$lgfile
+		nxsto=$blkst
+	fi
+done
+
+if [ -z $nxsto ]
+then
+	echo "No usable extra storage found" &>>$lgfile
+else
+	echo "Extra storage found: $nxsto" &>>$lgfile
+	cat /etc/fstab > /etc/fstab.ORG
+	umount /dev/$nxsto >/dev/null 2>&1
+	cat /etc/fstab |egrep -v "($nxsto|nextcloudsto)" > /etc/fstab.NEW
+	cat /etc/fstab.NEW > /etc/fstab
+	mkfs.ext4 -F -F -L nextcloudsto /dev/$nxsto
+	echo 'LABEL=nextcloudsto /var/nextcloud-sto-data ext4 defaults 0 0' >> /etc/fstab
+	mount /var/nextcloud-sto-data
+fi
+
 yum -y install epel-release &>>$lgfile
 yum -y install device-mapper-persistent-data &>>$lgfile
 
@@ -121,6 +160,7 @@ innodb_flush_log_at_trx_commit = 2
 innodb_file_per_table = 1
 EOF
 
+mkdir -p /etc/systemd/system/mariadb.service.d/
 mkdir -p /etc/systemd/system/mariadb.service.d/
 cat <<EOF >/etc/systemd/system/mariadb.service.d/limits.conf
 [Service]
@@ -164,7 +204,7 @@ rm -f /root/os-db.sql
 yum -y install https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
 yum -y update --exclude=kernel* &>>$lgfile
 yum -y erase php-common
-yum -y install nginx php71w-opcache \
+yum -y install httpd mod_php71w php71w php71w-opcache \
 php71w-pear php71w-pdo php71w-xml php71w-pdo_dblib \
 php71w-mbstring php71w-mysqlnd php71w-mcrypt php71w-fpm \
 php71w-bcmath php71w-gd php71w-cli php71w-ldap \
@@ -198,178 +238,28 @@ else
 	crudini --set /etc/php.ini PHP date.timezone "UTC"
 fi
 
-crudini --set /etc/php-fpm.d/www.conf www "env[PATH]" "/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin"
-
-mkdir -p /var/lib/php/session
-chown -R nginx:nginx /var/lib/php/session
-sed -r -i 's/apache/nginx/g' /etc/php-fpm.d/www.conf
-
-systemctl enable php-fpm
-systemctl restart php-fpm
-
-openssl dhparam -out /etc/nginx/dhparams.pem 2048 &>>$lgfile
-
-cat <<EOF >/etc/nginx/nginx.conf
-user nginx;
-worker_processes auto;
-error_log /var/log/nginx/error.log;
-pid /run/nginx.pid;
-
-include /usr/share/nginx/modules/*.conf;
-
-events {
- worker_connections 1024;
-}
-
-http {
- log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
- '\$status \$body_bytes_sent "\$http_referer" '
- '"\$http_user_agent" "\$http_x_forwarded_for"';
-
- access_log  /var/log/nginx/access.log  main;
- client_max_body_size 100M;
-
- sendfile            on;
- tcp_nopush          on;
- tcp_nodelay         on;
- keepalive_timeout   65;
- types_hash_max_size 2048;
-
- include             /etc/nginx/mime.types;
- default_type        application/octet-stream;
-
- include /etc/nginx/conf.d/*.conf;
-
- server {
-  listen       80 default_server;
-  listen       [::]:80 default_server;
-  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-  server_name  _;
-  #Uncomment the following line if you want to redirect your http site
-  #to the https one.
-  #return 301 https://\$server_name\$request_uri;
-  root /usr/share/nginx/html;
-
-  # Load configuration files for the default server block.
-  include /etc/nginx/default.d/*.conf;
-
-  location / {
-    index index.php index.html index.htm;
-    location ~ ^/.+\.php {
-    fastcgi_param  SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-    fastcgi_index  index.php;
-    fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
-    fastcgi_param PATH_INFO \$fastcgi_path_info;
-    fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
-    include fastcgi_params;
-    fastcgi_pass 127.0.0.1:9000;
-  }
- }
-
- error_page 404 /404.html;
- location = /40x.html {
- }
-
- error_page 500 502 503 504 /50x.html;
-  location = /50x.html {
-  }
- }
- server {
-  listen 443 ssl http2 default_server;
-  listen [::]:443 ssl http2 default_server;
-  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-  server_name  _;
-  root /usr/share/nginx/html;
-
-  ssl_certificate "/etc/pki/nginx/server.crt";
-  ssl_certificate_key "/etc/pki/nginx/private/server.key";
-
-  include /etc/nginx/default.d/*.conf;
-
-  location / {
-    index index.php index.html index.htm;
-    location ~ ^/.+\.php {
-      fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;
-      fastcgi_index  index.php;
-      fastcgi_split_path_info ^(.+\.php)(/?.+)\$;
-      fastcgi_param PATH_INFO \$fastcgi_path_info;
-      fastcgi_param PATH_TRANSLATED \$document_root\$fastcgi_path_info;
-      include fastcgi_params;
-      fastcgi_pass 127.0.0.1:9000;
-    }
-  }
-
-  error_page 404 /404.html;
-  location = /40x.html {
-  }
-
-  error_page 500 502 503 504 /50x.html;
-  location = /50x.html {
-  }
- }
-}
+cat <<EOF >/etc/httpd/conf.d/extra-security.conf
+ServerTokens ProductOnly
+FileETag None
+ExtendedStatus Off
+UseCanonicalName Off
+TraceEnable off
+ServerSignature Off
+Header always set Strict-Transport-Security "max-age=15552000; includeSubDomains"
 EOF
 
-cat <<EOF>/etc/nginx/default.d/sslconfig.conf
-ssl_session_cache shared:SSL:1m;
-ssl_session_timeout  10m;
-ssl_prefer_server_ciphers on;
-ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:!DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
-ssl_dhparam /etc/nginx/dhparams.pem;
-EOF
-
-cat <<EOF>/etc/nginx/default.d/gzip.conf
-gzip on;
-gzip_disable "msie6";
-gzip_vary on;
-gzip_proxied any;
-gzip_comp_level 5;
-gzip_http_version 1.1;
-gzip_min_length 256;
-gzip_types
- application/atom+xml
- application/javascript
- application/json
- application/ld+json
- application/manifest+json
- application/rss+xml
- application/vnd.geo+json
- application/vnd.ms-fontobject
- application/x-font-ttf
- application/x-web-app-manifest+json
- application/xhtml+xml
- application/xml
- font/opentype
- image/bmp
- image/svg+xml
- image/x-icon
- text/cache-manifest
- text/css
- text/plain
- text/vcard
- text/vnd.rim.location.xloc
- text/vtt
- text/x-component
- text/x-cross-domain-policy;
-EOF
-
-mkdir -p /etc/pki/nginx
-mkdir -p /etc/pki/nginx/private
-
-openssl req -x509 -batch -nodes -days 365 -newkey rsa:2048 -keyout /etc/pki/nginx/private/server.key -out /etc/pki/nginx/server.crt &>>$lgfile
-
-chmod 0600 /etc/pki/nginx/private/server.key
-chown nginx.nginx /etc/pki/nginx/private/server.key
+sed -r -i 's/^SSLProtocol.*/SSLProtocol\ all\ -SSLv2\ -SSLv3/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^SSLCipherSuite.*/SSLCipherSuite\ HIGH:MEDIUM:!aNULL:\!MD5:\!SSLv3:\!SSLv2/g' /etc/httpd/conf.d/ssl.conf
+sed -r -i 's/^\#SSLHonorCipherOrder.*/SSLHonorCipherOrder\ on/g' /etc/httpd/conf.d/ssl.conf
 
 systemctl enable redis
 systemctl start redis
 
-wget https://download.nextcloud.com/server/releases/latest-12.zip -O /root/latest-12.zip &>>$lgfile
-unzip /root/latest-12.zip -d /usr/share/nginx/html/ &>>$lgfile
-rm -f /root/latest-12.zip
+wget https://download.nextcloud.com/server/releases/latest-13.zip -O /root/latest-13.zip &>>$lgfile
+unzip /root/latest-13.zip -d /var/www/html/ &>>$lgfile
+rm -f /root/latest-13.zip
 
-cat <<EOF >/usr/share/nginx/html/index.html
+cat <<EOF >/var/www/html/index.html
 <HTML>
 <HEAD>
 <META HTTP-EQUIV="refresh" CONTENT="0;URL=/nextcloud">
@@ -379,18 +269,18 @@ cat <<EOF >/usr/share/nginx/html/index.html
 </HTML>
 EOF
 
-if [ ! -f /usr/share/nginx/html/nextcloud/occ ]
+if [ ! -f /var/www/html/nextcloud/occ ]
 then
 	echo "Nextcloud Installation FAILED. Aborting!" &>>$lgfile
 	echo "End Date/Time: `date`" &>>$lgfile
 	exit 0
 fi
 
-chown -R nginx.nginx /usr/share/nginx/html/nextcloud
-chown -R nginx.nginx /var/nextcloud-sto-data
+chown -R apache.apache /var/www/html/nextcloud
+chown -R apache.apache /var/nextcloud-sto-data
 
-sudo -u nginx /usr/local/bin/php \
-/usr/share/nginx/html/nextcloud/occ maintenance:install \
+sudo -u apache /usr/local/bin/php \
+/var/www/html/nextcloud/occ maintenance:install \
 --database "mysql" \
 --database-host 127.0.0.1:3306 \
 --database-name "nextcloud"  \
@@ -411,8 +301,8 @@ mycount=1
 
 for myip in $allipaddr
 do
-	sudo -u nginx /usr/local/bin/php \
-	/usr/share/nginx/html/nextcloud/occ \
+	sudo -u apache /usr/local/bin/php \
+	/var/www/html/nextcloud/occ \
 	config:system:set \
 	trusted_domains $mycount \
 	--value=$myip
@@ -421,8 +311,8 @@ do
 done
 echo "Final counter: $mycount" &>>$lgfile
 
-sudo -u nginx /usr/local/bin/php \
-/usr/share/nginx/html/nextcloud/occ \
+sudo -u apache /usr/local/bin/php \
+/var/www/html/nextcloud/occ \
 config:system:set \
 trusted_domains $mycount \
 --value=`hostname`
@@ -437,8 +327,8 @@ then
 	echo "No metadata-based public IP detected" &>>$lgfile
 else
 	echo $publicip
-	sudo -u nginx /usr/local/bin/php \
-	/usr/share/nginx/html/nextcloud/occ \
+	sudo -u apache /usr/local/bin/php \
+	/var/www/html/nextcloud/occ \
 	config:system:set \
 	trusted_domains $mycount \
 	--value=$publicip
@@ -450,8 +340,8 @@ if [ -z $publichostname ]
 then
 	echo "No metadata-based public hostname detected" &>>$lgfile
 else
-	sudo -u nginx /usr/local/bin/php \
-	/usr/share/nginx/html/nextcloud/occ \
+	sudo -u apache /usr/local/bin/php \
+	/var/www/html/nextcloud/occ \
 	config:system:set \
 	trusted_domains $mycount \
 	--value=$publichostname
@@ -459,11 +349,11 @@ else
 	mycount=$[mycount+1]
 fi
 
-cat /usr/share/nginx/html/nextcloud/config/config.php > /root/config.php-original
+cat /var/www/html/nextcloud/config/config.php > /root/config.php-original
 
-sed -i '$ d' /usr/share/nginx/html/nextcloud/config/config.php
+sed -i '$ d' /var/www/html/nextcloud/config/config.php
 
-cat <<EOF >>/usr/share/nginx/html/nextcloud/config/config.php
+cat <<EOF >>/var/www/html/nextcloud/config/config.php
   'filelocking.enabled' => true,
   'memcache.locking' => '\OC\Memcache\Redis',
   'memcache.local' => '\OC\Memcache\Redis',
@@ -476,34 +366,23 @@ cat <<EOF >>/usr/share/nginx/html/nextcloud/config/config.php
 );
 EOF
 
-systemctl enable nginx
-systemctl restart nginx
+systemctl enable httpd
+systemctl restart httpd
 
-sudo -u nginx /usr/local/bin/php \
-/usr/share/nginx/html/nextcloud/occ \
+sudo -u apache /usr/local/bin/php \
+/var/www/html/nextcloud/occ \
 user:delete admin
 
 export OC_PASS="$nextcloudadminpass"
-su -s /bin/bash nginx -c '/usr/local/bin/php \
-/usr/share/nginx/html/nextcloud/occ \
+su -s /bin/bash apache -c '/usr/local/bin/php \
+/var/www/html/nextcloud/occ \
 user:add --password-from-env \
 --group="admin" \
 --display-name="NextCloud SuperAdmin" \
 admin
 '
 
-cat<<EOF>/etc/cron.d/nextcloud-job-crontab
-#
-#
-# Nextcloud cron job
-#
-# Every 15 minutes
-#
-*/15 * * * * nginx /usr/bin/php -f /usr/share/nginx/html/nextcloud/cron.php
-#
-EOF
-
-yum -y install python2-certbot-nginx &>>$lgfile
+yum -y install python-certbot-apache &>>$lgfile
 
 cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
 #
@@ -516,14 +395,26 @@ cat<<EOF>/etc/cron.d/letsencrypt-renew-crontab
 #
 EOF
 
-systemctl restart crond
-sudo -u nginx /usr/local/bin/php /usr/share/nginx/html/nextcloud/cron.php
+cat<<EOF>/etc/cron.d/nextcloud-job-crontab
+#
+#
+# Nextcloud cron job
+#
+# Every 15 minutes
+#
+*/15 * * * * apache /usr/bin/php -f /var/www/html/nextcloud/cron.php
+#
+EOF
 
-finalcheck=`sudo -u nginx /usr/local/bin/php /usr/share/nginx/html/nextcloud/occ config:system:get version 2>&1|grep -c ^12.`
+sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/cron.php
+
+systemctl reload crond
+
+finalcheck=`sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/occ config:system:get version 2>&1|grep -c ^13.`
 
 if [ $finalcheck == "1" ]
 then
-	export nextcloudversion=`sudo -u nginx /usr/local/bin/php /usr/share/nginx/html/nextcloud/occ config:system:get version 2>&1`
+	export nextcloudversion=`sudo -u apache /usr/local/bin/php /var/www/html/nextcloud/occ config:system:get version 2>&1`
 	echo "NEXTCLOUD VERSION: $nextcloudversion" >> /root/nextcloud-credentials.txt
 	echo "Ready. Your nextcloud access credentials are stored in the file /root/nextcloud-credentials.txt:" &>>$lgfile
 	echo "" &>>$lgfile

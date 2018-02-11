@@ -15,7 +15,7 @@ Supported Operating Systems: Centos 7. Nextcloud release 11.
 Base requeriments:
 
 - Distribution: Centos 7 64 bits.
-- Minimun hardware: 1 cores/threads, 512MB RAM, 10GB Free for the "/usr" partition, and 10GB Free for the "/var" partition, or if a single partition for all (/) 10GB free total.
+- Minimun hardware: 1 cores/threads, 1024MB RAM, 10GB Free for the "/usr" partition, and 10GB Free for the "/var" partition, or if a single partition for all (/) 10GB free total.
 - The server must have internet access and at least one usable (static) IP Address.
 - Optional: An extra volume for persistent storage.
 
@@ -27,7 +27,7 @@ The script can also be used in any cloud supporting "user_data" or "bootstrap" s
 
 - SSH (22 tcp).
 - Nextcloud will expose ports 80 tcp (http) and 443 tcp (https).
-- Minio will expose port 8080 tcp.
+- Minio will expose port 8080 tcp trough nginx.
 
 
 ## What the script does ?:
@@ -54,12 +54,27 @@ The script perform the following actions in the operating system:
 
 Depending on Internet access conditions, the script can take from 10 minutes to 20 minutes to complete.
 
-Please note that this script will disable both firewalld and selinux. If you want you can install them back after this script finish its run.
+Please note that this script will disable selinux. 
+
+
+## FirewallD service:
+
+Firewall-d will be configured with the following ports opened:
+
+- 22 tcp (ssh).
+- 80 tcp (http).
+- 443 tcp (https).
+- 8080 tcp (minio http, only for the scripts using minio-s3).
 
 
 ## Apache vs Nginx:
 
 We don't have a preference here, but in general terms Nginx is faster than apache. Having said that, you'll probably find the ones using nginx faster. Note that the minio-s3 based ones are "exotic" as they combine nginx as a front-end for minio-s3 (serving all storage contents that way) and apache is just used as the "nextcloud" engine frontend.
+
+
+## Letsencrypt:
+
+Our default installation creates a self-signed certificate for the https service. "Certbot" utility is included if you want to add a let's encrypt free certificate. The crontab for auto-renewal is also included as part of our solution.
 
 
 # GENERAL REQUIREMENTS:

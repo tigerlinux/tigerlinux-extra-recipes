@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # NextCloud 11 Automated Installation Script - Nginx version
-# Rel 1.1
+# Rel 1.2
 # For usage on centos7 64 bits machines.
 #
 
@@ -317,6 +317,41 @@ ssl_prefer_server_ciphers on;
 ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
 ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:!DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
 ssl_dhparam /etc/nginx/dhparams.pem;
+EOF
+
+cat <<EOF>/etc/nginx/default.d/gzip.conf
+gzip on;
+gzip_disable "msie6";
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 5;
+gzip_http_version 1.1;
+gzip_min_length 256;
+gzip_types
+ application/atom+xml
+ application/javascript
+ application/json
+ application/ld+json
+ application/manifest+json
+ application/rss+xml
+ application/vnd.geo+json
+ application/vnd.ms-fontobject
+ application/x-font-ttf
+ application/x-web-app-manifest+json
+ application/xhtml+xml
+ application/xml
+ font/opentype
+ image/bmp
+ image/svg+xml
+ image/x-icon
+ text/cache-manifest
+ text/css
+ text/plain
+ text/vcard
+ text/vnd.rim.location.xloc
+ text/vtt
+ text/x-component
+ text/x-cross-domain-policy;
 EOF
 
 mkdir -p /etc/pki/nginx

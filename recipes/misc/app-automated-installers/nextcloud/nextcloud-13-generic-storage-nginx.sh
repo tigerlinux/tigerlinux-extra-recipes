@@ -4,8 +4,8 @@
 # tigerlinux@gmail.com
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
-# NextCloud 12 Automated Installation Script - Nginx version
-# Rel 1.2
+# NextCloud 13 Automated Installation Script - Nginx version
+# Rel 1.0
 # For usage on centos7 64 bits machines.
 #
 
@@ -365,9 +365,9 @@ chown nginx.nginx /etc/pki/nginx/private/server.key
 systemctl enable redis
 systemctl start redis
 
-wget https://download.nextcloud.com/server/releases/latest-12.zip -O /root/latest-12.zip &>>$lgfile
-unzip /root/latest-12.zip -d /usr/share/nginx/html/ &>>$lgfile
-rm -f /root/latest-12.zip
+wget https://download.nextcloud.com/server/releases/latest-13.zip -O /root/latest-13.zip &>>$lgfile
+unzip /root/latest-13.zip -d /usr/share/nginx/html/ &>>$lgfile
+rm -f /root/latest-13.zip
 
 cat <<EOF >/usr/share/nginx/html/index.html
 <HTML>
@@ -519,7 +519,7 @@ EOF
 systemctl restart crond
 sudo -u nginx /usr/local/bin/php /usr/share/nginx/html/nextcloud/cron.php
 
-finalcheck=`sudo -u nginx /usr/local/bin/php /usr/share/nginx/html/nextcloud/occ config:system:get version 2>&1|grep -c ^12.`
+finalcheck=`sudo -u nginx /usr/local/bin/php /usr/share/nginx/html/nextcloud/occ config:system:get version 2>&1|grep -c ^13.`
 
 if [ $finalcheck == "1" ]
 then
