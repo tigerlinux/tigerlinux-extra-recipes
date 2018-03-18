@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # Wordpress with Dockerized MariaDB 10.1 Installation Script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.4
+# Release 1.5
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -344,6 +344,9 @@ cat<<EOF >/var/wordpress-storage/mariadb01/conf.d/server.cnf
 [mysqld]
 max_connections = 100
 max_allowed_packet = 1024M
+query_cache_type = 1
+query_cache_size = 8388608
+query_cache_limit = 1048576
 thread_cache_size = 128
 sort_buffer_size = 4M
 bulk_insert_buffer_size = 16M
@@ -372,6 +375,9 @@ cat<<EOF >/var/wordpress-storage/mariadb01/conf.d/server.cnf
 socket = /var/lib/mysql/mysql.sock
 max_connections = 100
 max_allowed_packet = 1024M
+query_cache_type = 1
+query_cache_size = 8388608
+query_cache_limit = 1048576
 thread_cache_size = 128
 sort_buffer_size = 4M
 bulk_insert_buffer_size = 16M

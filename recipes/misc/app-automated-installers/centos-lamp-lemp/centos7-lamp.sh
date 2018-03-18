@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LAMP Server Installation Script
-# Rel 1.6
+# Rel 1.7
 # For usage on centos7 64 bits machines.
 # (includes phpmyadmin installation as an option)
 
@@ -124,8 +124,9 @@ cat <<EOF >/etc/my.cnf.d/server-lamp.cnf
 binlog_format = ROW
 default-storage-engine = innodb
 innodb_autoinc_lock_mode = 2
-query_cache_type = 0
-query_cache_size = 0
+query_cache_type = 1
+query_cache_size = 8388608
+query_cache_limit = 1048576
 bind-address = $mariadbip
 max_allowed_packet = 1024M
 max_connections = 1000

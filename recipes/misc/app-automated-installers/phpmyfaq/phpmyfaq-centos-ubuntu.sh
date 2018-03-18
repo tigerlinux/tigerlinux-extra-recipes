@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # PHPMYFAQ with Dockerized MariaDB 10.1 Installation Script
 # For Centos 7 and Ubuntu 16.04lts, 64 bits.
-# Release 1.2
+# Release 1.4
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -349,6 +349,9 @@ cat<<EOF >/var/phpmyfaq-storage/mariadb01/conf.d/server.cnf
 max_connections = 100
 max_allowed_packet = 1024M
 thread_cache_size = 128
+query_cache_type = 1
+query_cache_size = 8388608
+query_cache_limit = 1048576
 sort_buffer_size = 4M
 bulk_insert_buffer_size = 16M
 max_heap_table_size = 32M
@@ -377,6 +380,9 @@ socket = /var/lib/mysql/mysql.sock
 max_connections = 100
 max_allowed_packet = 1024M
 thread_cache_size = 128
+query_cache_type = 1
+query_cache_size = 8388608
+query_cache_limit = 1048576
 sort_buffer_size = 4M
 bulk_insert_buffer_size = 16M
 max_heap_table_size = 32M
@@ -437,11 +443,11 @@ mysql -u root --protocol=socket --socket=/var/lib/mysql/mysql.sock -p`grep passw
 sync
 rm -f /root/os-db.sql
 
-wget http://download.phpmyfaq.de/phpMyFAQ-2.9.8.tar.gz -O /root/phpMyFAQ-2.9.8.tar.gz &>>$lgfile
-tar -xzvf /root/phpMyFAQ-2.9.8.tar.gz -C /usr/local/src/ &>>$lgfile
+wget http://download.phpmyfaq.de/phpMyFAQ-2.9.10.tar.gz -O /root/phpMyFAQ-2.9.10.tar.gz &>>$lgfile
+tar -xzvf /root/phpMyFAQ-2.9.10.tar.gz -C /usr/local/src/ &>>$lgfile
 rsync -avP /usr/local/src/phpmyfaq/ /var/www/html/
 chown -R root.root /var/www/html/*
-rm -rf /root/phpMyFAQ-2.9.8.tar.gz /usr/local/src/phpmyfaq
+rm -rf /root/phpMyFAQ-2.9.10.tar.gz /usr/local/src/phpmyfaq
 
 mkdir /var/www/html/images
 mkdir /var/www/html/attachments

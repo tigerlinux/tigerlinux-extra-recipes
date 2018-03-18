@@ -4,8 +4,8 @@
 # tigerlinux@gmail.com
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
-# Midpoint 3.6 automated installation script
-# Rel 1.0
+# Midpoint 3.7 automated installation script
+# Rel 1.1
 # For usage on centos7 64 bits machines.
 #
 
@@ -94,9 +94,10 @@ wget \
 --no-cookies \
 --no-check-certificate \
 --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
-"http://download.oracle.com/otn-pub/java/jdk/8u151-b12/e758a0de34e24606bca991d704f6dcbf/jdk-8u151-linux-x64.rpm" \
--O /root/jdk-8u151-linux-x64.rpm &>>$lgfile
-yum -y localinstall /root/jdk-8u151-linux-x64.rpm &>>$lgfile
+"http://download.oracle.com/otn-pub/java/jdk/8u162-b12/0da788060d494f5095bf8624735fa2f1/jdk-8u162-linux-x64.rpm" \
+-O /root/jdk-8u162-linux-x64.rpm &>>$lgfile
+yum -y localinstall /root/jdk-8u162-linux-x64.rpm &>>$lgfile
+rm -f /root/jdk-8u162-linux-x64.rpm
 
 yum -y install unzip
 
@@ -131,7 +132,7 @@ echo $JAVA_HOME &>>$lgfile
 ln -s /usr/java/latest /usr/lib/jvm
 export JAVA_HOME="/usr/java/latest/jre"
 
-wget http://www-eu.apache.org/dist/tomcat/tomcat-8/v8.5.23/bin/apache-tomcat-8.5.23.tar.gz -O /root/apache-tomcat.tar.gz &>>$lgfile
+wget http://www-us.apache.org/dist/tomcat/tomcat-8/v8.5.29/bin/apache-tomcat-8.5.29.tar.gz -O /root/apache-tomcat.tar.gz &>>$lgfile
 
 tar -xzvf /root/apache-tomcat.tar.gz -C /opt/ &>>$lgfile
 mv /opt/apache-tomcat-* /opt/tomcat
@@ -301,23 +302,23 @@ echo "ALTER user midpoint with password '$midpointdbpass'"|$psqlcommand
 echo "CREATE DATABASE midpoint"|$psqlcommand
 echo "GRANT ALL PRIVILEGES ON database midpoint TO midpoint;"|$psqlcommand
 
-wget https://raw.githubusercontent.com/Evolveum/midpoint/v3.6.1/config/sql/_all/postgresql-3.6-all.sql -O /root/postgresql-3.6-all.sql &>>$lgfile
+wget https://raw.githubusercontent.com/Evolveum/midpoint/v3.7.1/config/sql/_all/postgresql-3.7-all.sql -O /root/postgresql-3.7-all.sql &>>$lgfile
 
-psql --host=127.0.0.1 --username=midpoint --dbname=midpoint < /root/postgresql-3.6-all.sql &>>$lgfile
+psql --host=127.0.0.1 --username=midpoint --dbname=midpoint < /root/postgresql-3.7-all.sql &>>$lgfile
 
 mkdir /var/opt/midpoint
 chown -R tomcat:tomcat /var/opt/midpoint
 
-wget https://evolveum.com/downloads/midpoint/3.6.1/midpoint-3.6.1-dist.tar.gz -O /root/midpoint-3.6.1-dist.tar.gz &>>$lgfile
+wget https://evolveum.com/downloads/midpoint/3.7.1/midpoint-3.7.1-dist.tar.gz -O /root/midpoint-3.7.1-dist.tar.gz &>>$lgfile
 
 cat /opt/apache-tomcat/bin/catalina.sh > /opt/apache-tomcat/bin/catalina.sh.ORIGINAL
 
 sed -r -i "s@Djava.protocol.handler.pkgs=org.apache.catalina.webresources@Djava.protocol.handler.pkgs=org.apache.catalina.webresources -server -Xms256m -Xmx512m  -XX:PermSize=128m -XX:MaxPermSize=256m -Dmidpoint.home=/var/opt/midpoint/ -Djavax.net.ssl.trustStore=/var/opt/midpoint/keystore.jceks -Djavax.net.ssl.trustStoreType=jceks@g" /opt/apache-tomcat/bin/catalina.sh
 
 systemctl stop tomcat
-tar -xzvf /root/midpoint-3.6.1-dist.tar.gz -C /usr/local/src/ &>>$lgfile
+tar -xzvf /root/midpoint-3.7.1-dist.tar.gz -C /usr/local/src/ &>>$lgfile
 
-cp -v /usr/local/src/midpoint-3.6.1/war/midpoint.war /opt/tomcat/webapps/ &>>$lgfile
+cp -v /usr/local/src/midpoint-3.7.1/lib/*.war /opt/tomcat/webapps/ &>>$lgfile
 chown -R tomcat.tomcat /opt/tomcat
 sync
 sleep 10

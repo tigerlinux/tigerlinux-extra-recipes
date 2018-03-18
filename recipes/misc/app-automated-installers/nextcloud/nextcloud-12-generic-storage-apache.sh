@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # NextCloud 12 Automated Installation Script - Apache version
-# Rel 1.1
+# Rel 1.2
 # For usage on centos7 64 bits machines.
 #
 
@@ -149,8 +149,9 @@ cat <<EOF >/etc/my.cnf.d/server-nextcloud.cnf
 binlog_format = ROW
 default-storage-engine = innodb
 innodb_autoinc_lock_mode = 2
-query_cache_type = 0
-query_cache_size = 0
+query_cache_type = 1
+query_cache_size = 8388608
+query_cache_limit = 1048576
 bind-address = 127.0.0.1
 max_allowed_packet = 1024M
 max_connections = 1000

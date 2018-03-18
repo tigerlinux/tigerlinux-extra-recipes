@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # LimeSurvey with MariaDB 10.1 DB Backend installation script
-# Rel 1.2
+# Rel 1.3
 # For usage on centos7 64 bits machines.
 #
 
@@ -120,22 +120,23 @@ fi
 yum -y update --exclude=kernel* &>>$lgfile
 yum -y install MariaDB MariaDB-server MariaDB-client galera crudini &>>$lgfile
 
-echo "" > /etc/my.cnf.d/mariadb-server-custom.cnf
+cat <<EOF >/etc/my.cnf.d/mariadb-server-custom.cnf
+[mysqld]
+binlog_format = ROW
+default-storage-engine = innodb
+innodb_autoinc_lock_mode = 2
+query_cache_type = 1
+query_cache_size = 8388608
+query_cache_limit = 1048576
+bind-address = $mariadbip
+max_allowed_packet = 1024M
+max_connections = 1000
+innodb_doublewrite = 1
+innodb_log_file_size = 100M
+innodb_flush_log_at_trx_commit = 2
+innodb_file_per_table = 1
+EOF
 
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld binlog_format ROW
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld default-storage-engine innodb
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld innodb_autoinc_lock_mode 2
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld query_cache_type 0
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld query_cache_size 0
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld bind-address $mariadbip
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld max_allowed_packet 1024M
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld max_connections 1000
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld innodb_doublewrite 1
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld innodb_log_file_size 100M
-crudini --set /etc/my.cnf.d/mariadb-server-custom.cnf mysqld innodb_flush_log_at_trx_commit 2
-echo "innodb_file_per_table" >> /etc/my.cnf.d/mariadb-server-custom.cnf
-
-mkdir -p /etc/systemd/system/mariadb.service.d/
 mkdir -p /etc/systemd/system/mariadb.service.d/
 cat <<EOF >/etc/systemd/system/mariadb.service.d/limits.conf
 [Service]

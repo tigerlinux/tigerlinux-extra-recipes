@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # ZoneMinder Setup for Centos 7 64 bits
-# Release 1.2
+# Release 1.3
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -101,20 +101,22 @@ yum -y update --exclude=kernel* &>>$lgfile
 
 yum -y install mariadb-server mariadb crudini &>>$lgfile
 
-echo "" > /etc/my.cnf.d/server-zoneminder.cnf
-
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld binlog_format ROW
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld default-storage-engine innodb
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld innodb_autoinc_lock_mode 2
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld query_cache_type 0
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld query_cache_size 0
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld bind-address 127.0.0.1
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld max_allowed_packet 1024M
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld max_connections 1000
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld innodb_doublewrite 1
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld innodb_log_file_size 100M
-crudini --set /etc/my.cnf.d/server-zoneminder.cnf mysqld innodb_flush_log_at_trx_commit 2
-echo "innodb_file_per_table" >> /etc/my.cnf.d/server-zoneminder.cnf
+cat <<EOF >/etc/my.cnf.d/server-zoneminder.cnf
+[mysqld]
+binlog_format = ROW
+default-storage-engine = innodb
+innodb_autoinc_lock_mode = 2
+query_cache_type = 1
+query_cache_size = 8388608
+query_cache_limit = 1048576
+bind-address = 127.0.0.1
+max_allowed_packet = 1024M
+max_connections = 1000
+innodb_doublewrite = 1
+innodb_log_file_size = 100M
+innodb_flush_log_at_trx_commit = 2
+innodb_file_per_table = 1
+EOF
 
 mkdir -p /etc/systemd/system/mariadb.service.d/
 cat <<EOF >/etc/systemd/system/mariadb.service.d/limits.conf
@@ -162,7 +164,8 @@ chmod 0600 /root/.my.cnf
 
 rm -f /root/os-db.sql
 
-yum -y install --nogpgcheck http://zmrepo.zoneminder.com/el/7/x86_64/zmrepo-7-9.el7.centos.noarch.rpm &>>$lgfile
+yum -y install --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm &>>$lgfile
+yum -y install --nogpgcheck https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm &>>$lgfile
 
 yum -y update --exclude=kernel* &>>$lgfile
 yum -y install httpd mod_ssl php-common mod_php php-pear \
