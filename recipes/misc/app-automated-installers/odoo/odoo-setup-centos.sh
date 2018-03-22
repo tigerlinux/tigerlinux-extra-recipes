@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # ODOO ERP RELEASE 10 Setup for Centos 7 64 bits
-# Release 1.5
+# Release 1.6
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -142,45 +142,62 @@ events {
     worker_connections 1024;
 }
 http {
-    client_max_body_size 1000m;
-    log_format  main  '\$remote_addr - \$remote_user [$time_local] "\$request" '
-                      '\$status \$body_bytes_sent "\$http_referer" '
-                      '"\$http_user_agent" "\$http_x_forwarded_for"';
+ client_max_body_size 1000m;
+ log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+ '\$status \$body_bytes_sent "\$http_referer" '
+ '"\$http_user_agent" "\$http_x_forwarded_for"';
 
-    access_log  /var/log/nginx/access.log  main;
-    sendfile            on;
-    tcp_nopush          on;
-    tcp_nodelay         on;
-    keepalive_timeout   120;
-    types_hash_max_size 2048;
-    include             /etc/nginx/mime.types;
-    default_type        application/octet-stream;
-    include /etc/nginx/conf.d/*.conf;
-    server {
-        listen       80 default_server;
-        listen       [::]:80 default_server;
+ access_log  /var/log/nginx/access.log  main;
+ sendfile on;
+ tcp_nopush on;
+ tcp_nodelay on;
+ keepalive_timeout 300;
+ types_hash_max_size 2048;
+ include /etc/nginx/mime.types;
+ default_type application/octet-stream;
+ include /etc/nginx/conf.d/*.conf;
+ server {
+  listen 80 default_server;
+  listen [::]:80 default_server;
+  server_name _;
+  server_tokens off;
+  proxy_ssl_verify off;
+  proxy_ssl_session_reuse on;
+  proxy_cache off;
+  proxy_store off;
+  proxy_connect_timeout 300;
+  proxy_send_timeout 300;
+  proxy_read_timeout 300;
+  send_timeout 300;
+  location / {
+   proxy_buffering off;
+   proxy_set_header Host \$http_host;
+   proxy_pass http://127.0.0.1:8069;
+  }
+ }
+ server {
+  listen 443 ssl http2 default_server;
+  listen [::]:443 ssl http2 default_server;
+  ssl_certificate "/etc/pki/nginx/server.crt";
+  ssl_certificate_key "/etc/pki/nginx/private/server.key";
+  include /etc/nginx/default.d/sslconfig.conf;
 
-        server_name `hostname`;
-        location / {
-           proxy_buffering off;
-           proxy_set_header Host \$http_host;
-           proxy_pass http://127.0.0.1:8069;
-        }
-    }
-    server {
-        listen 443 ssl http2 default_server;
-        listen [::]:443 ssl http2 default_server;
-        ssl_certificate "/etc/pki/nginx/server.crt";
-        ssl_certificate_key "/etc/pki/nginx/private/server.key";
-        include /etc/nginx/default.d/sslconfig.conf;
-
-        server_name `hostname`;
-        location / {
-           proxy_buffering off;
-           proxy_set_header Host \$http_host;
-           proxy_pass http://127.0.0.1:8069;
-        }
-    }
+  server_name _;
+  server_tokens off;
+  proxy_ssl_verify off;
+  proxy_ssl_session_reuse on;
+  proxy_cache off;
+  proxy_store off;
+  proxy_connect_timeout 300;
+  proxy_send_timeout 300;
+  proxy_read_timeout 300;
+  send_timeout 300;
+  location / {
+   proxy_buffering off;
+   proxy_set_header Host \$http_host;
+   proxy_pass http://127.0.0.1:8069;
+  }
+ }
 }
 EOF
 
@@ -191,6 +208,41 @@ ssl_prefer_server_ciphers on;
 ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
 ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:!DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
 ssl_dhparam /etc/nginx/dhparams.pem;
+EOF
+
+cat <<EOF>/etc/nginx/default.d/gzip.conf
+gzip on;
+gzip_disable "msie6";
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 5;
+gzip_http_version 1.1;
+gzip_min_length 256;
+gzip_types
+ application/atom+xml
+ application/javascript
+ application/json
+ application/ld+json
+ application/manifest+json
+ application/rss+xml
+ application/vnd.geo+json
+ application/vnd.ms-fontobject
+ application/x-font-ttf
+ application/x-web-app-manifest+json
+ application/xhtml+xml
+ application/xml
+ font/opentype
+ image/bmp
+ image/svg+xml
+ image/x-icon
+ text/cache-manifest
+ text/css
+ text/plain
+ text/vcard
+ text/vnd.rim.location.xloc
+ text/vtt
+ text/x-component
+ text/x-cross-domain-policy;
 EOF
 
 mkdir -p /etc/pki/nginx
