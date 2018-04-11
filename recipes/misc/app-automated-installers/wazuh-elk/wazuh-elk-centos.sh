@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # WAZUH Server Setup for Centos 7 64 bits
 # (Includes ELK Server Stack)
-# Release 1.4
+# Release 1.5
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -158,7 +158,7 @@ sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
 
 yum -y update --exclude=kernel* &>>$lgfile
 
-yum -y install elasticsearch &>>$lgfile
+yum -y install elasticsearch-5.6.5 &>>$lgfile
 
 sed -r -i 's/^#network.host.*/network.host:\ 127.0.0.1/g' /etc/elasticsearch/elasticsearch.yml
 sed -r -i 's/^#http.port.*/http.port:\ 9200/g' /etc/elasticsearch/elasticsearch.yml
@@ -168,7 +168,7 @@ systemctl enable elasticsearch
 # ElasticSearch stabilization time.
 sleep 60
 
-yum -y install kibana &>>$lgfile
+yum -y install kibana-5.6.5 &>>$lgfile
 sed -r -i 's/^#server.host.*/server.host:\ \"localhost\"/g' /etc/kibana/kibana.yml
 
 systemctl start kibana
@@ -271,7 +271,7 @@ chown nginx.nginx /etc/pki/nginx/private/server.key
 systemctl restart nginx
 systemctl enable nginx
 
-yum -y install logstash &>>$lgfile
+yum -y install logstash-5.6.5 &>>$lgfile
 
 mkdir /etc/pki/CA-ELK
 
@@ -298,7 +298,9 @@ cp /etc/pki/CA-ELK/ca.crt /etc/pki/ca-trust/source/anchors/
 cd /
 update-ca-trust &>>$lgfile
 
-curl -so /etc/logstash/wazuh-elastic5-template.json https://raw.githubusercontent.com/wazuh/wazuh/2.0/extensions/elasticsearch/wazuh-elastic5-template.json &>>$lgfile
+curl -so /etc/logstash/wazuh-elastic5-template.json \
+https://raw.githubusercontent.com/wazuh/wazuh/2.1/extensions/elasticsearch/wazuh-elastic5-template.json \
+&>>$lgfile
 
 
 cat<<EOF >/etc/logstash/conf.d/01-wazuh.conf
@@ -377,7 +379,7 @@ systemctl enable logstash
 sleep 60
 sync
 
-yum -y install wazuh-manager
+yum -y install wazuh-manager-2.1.1
 systemctl enable wazuh-manager
 systemctl restart wazuh-manager
 
@@ -389,11 +391,11 @@ yum -y install nodejs &>>$lgfile
 
 yum -y install python2 wazuh-api &>>$lgfile
 
-systemctl enable wazuh-api
+systemctl enable wazuh-api-2.1.1
 systemctl restart wazuh-api
 
 echo "Installing WAZUHAPP Plugin. This will take several minutes to finish. Please wait" &>>$lgfile
-/usr/share/kibana/bin/kibana-plugin install https://packages.wazuh.com/wazuhapp/wazuhapp.zip &>>$lgfile
+/usr/share/kibana/bin/kibana-plugin install https://packages.wazuh.com/wazuhapp/wazuhapp-2.1.1_5.6.5.zip &>>$lgfile
 
 cd /
 
@@ -408,7 +410,7 @@ systemctl restart kibana
 
 sleep 30
 
-yum -y install filebeat &>>$lgfile
+yum -y install filebeat-5.6.5 &>>$lgfile
 
 cat<<EOF >/etc/filebeat/filebeat.yml
 filebeat:
@@ -432,7 +434,7 @@ systemctl restart filebeat
 systemctl enable filebeat
 
 curl \
-https://raw.githubusercontent.com/wazuh/wazuh-kibana-app/master/server/startup/integration_files/template_file.json \
+https://raw.githubusercontent.com/wazuh/wazuh-kibana-app/2.1/server/startup/integration_files/template_file.json \
 | \
 curl \
 -XPUT \
@@ -440,7 +442,7 @@ curl \
 -H 'Content-Type: application/json' -d @-
 
 curl \
-https://raw.githubusercontent.com/wazuh/wazuh-kibana-app/master/server/startup/integration_files/alert_sample.json \
+https://raw.githubusercontent.com/wazuh/wazuh-kibana-app/2.1/server/startup/integration_files/alert_sample.json \
 | \
 curl -XPUT "http://localhost:9200/wazuh-alerts-"`date +%Y.%m.%d`"/wazuh/sample" \
 -H 'Content-Type: application/json' -d @-
@@ -452,6 +454,14 @@ systemctl status logstash &>>$lgfile
 systemctl status filebeat &>>$lgfile
 systemctl status wazuh-manager &>>$lgfile
 systemctl status wazuh-api &>>$lgfile
+
+yum -y install yum-plugin-versionlock &>>$lgfile
+yum versionlock elasticsearch* &>>$lgfile
+yum versionlock kibana* &>>$lgfile
+yum versionlock logstash* &>>$lgfile
+yum versionlock wazuh* &>>$lgfile
+yum versionlock list &>>$lgfile
+
 
 
 if [ `ss -ltn|grep -c :80` -gt "0" ] && [ `ss -ltn|grep -c :9200` -gt "0" ] && [ `ss -ltn|grep -c :5044` -gt "0" ] && [ `ss -ltn|grep -c :55000` -gt "0" ]
