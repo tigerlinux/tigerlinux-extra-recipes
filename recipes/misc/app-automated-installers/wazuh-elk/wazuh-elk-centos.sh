@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # WAZUH Server Setup for Centos 7 64 bits
 # (Includes ELK Server Stack)
-# Release 1.5
+# Release 1.6
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -15,11 +15,6 @@ export lgfile="/var/log/wazuh-server-automated-install.log"
 echo "Start Date/Time: `date`" &>>$lgfile
 export credentialsfile="/root/wazuh-server-credentials.txt"
 export OSFlavor='unknown'
-# Set your java preference... either OpenJDK or Oracle JDK
-# The next variable should be set to:
-# javaversion="openjdk"   # OpenJDK
-# javaversion="oraclejdk" # Oracke JDK
-javaversion="oraclejdk"
 
 if [ -f /etc/centos-release ]
 then
@@ -106,36 +101,26 @@ firewall-cmd --zone=public --add-port=1514/udp --permanent
 firewall-cmd --zone=public --add-port=55000/tcp --permanent
 firewall-cmd --reload
 
-case $javaversion in
-"oraclejdk")
-	wget \
-	--no-cookies \
-	--no-check-certificate \
-	--header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
-	"http://download.oracle.com/otn-pub/java/jdk/8u162-b12/0da788060d494f5095bf8624735fa2f1/jdk-8u162-linux-x64.rpm" \
-	-O /root/jdk-8u162-linux-x64.rpm &>>$lgfile
-	yum -y localinstall /root/jdk-8u162-linux-x64.rpm &>>$lgfile
-	sync
-	rm -f /root/jdk-8u162-linux-x64.rpm
-	if [ `which java 2>/dev/null|wc -l` == "0" ]
-	then
-		yum -y install java-1.8.0-openjdk &>>$lgfile
-	fi
-	;;
-"openjdk")
+wget \
+--no-cookies \
+--no-check-certificate \
+--header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
+"http://download.oracle.com/otn-pub/java/jdk/8u171-b11/512cd62ec5174c3487ac17c61aaa89e8/jdk-8u171-linux-x64.rpm" \
+-O /root/jdk-8u171-linux-x64.rpm &>>$lgfile
+yum -y localinstall /root/jdk-8u171-linux-x64.rpm &>>$lgfile
+sync
+rm -f /root/jdk-8u171-linux-x64.rpm
+if [ `which java 2>/dev/null|wc -l` == "0" ]
+then
 	yum -y install java-1.8.0-openjdk &>>$lgfile
-	;;
-*)
-	yum -y install java-1.8.0-openjdk &>>$lgfile
-	;;
-esac
+fi
 
 rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
 
 cat<<EOF>/etc/yum.repos.d/elasticsearch.repo
-[elasticsearch-5.x]
-name=Elasticsearch repository for 5.x packages
-baseurl=https://artifacts.elastic.co/packages/5.x/yum
+[elasticsearch-6.x]
+name=Elasticsearch repository for 6.x packages
+baseurl=https://artifacts.elastic.co/packages/6.x/yum
 gpgcheck=1
 gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
 enabled=1
@@ -148,8 +133,8 @@ cat<<EOF>/etc/yum.repos.d/wazuh.repo
 gpgcheck=1
 gpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH
 enabled=1
-name=CentOS-\$releasever - Wazuh
-baseurl=https://packages.wazuh.com/yum/el/\$releasever/\$basearch
+name=Wazuh repository
+baseurl=https://packages.wazuh.com/3.x/yum/
 protect=1
 EOF
 
@@ -158,7 +143,7 @@ sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
 
 yum -y update --exclude=kernel* &>>$lgfile
 
-yum -y install elasticsearch-5.6.5 &>>$lgfile
+yum -y install elasticsearch-6.2.3 &>>$lgfile
 
 sed -r -i 's/^#network.host.*/network.host:\ 127.0.0.1/g' /etc/elasticsearch/elasticsearch.yml
 sed -r -i 's/^#http.port.*/http.port:\ 9200/g' /etc/elasticsearch/elasticsearch.yml
@@ -168,11 +153,22 @@ systemctl enable elasticsearch
 # ElasticSearch stabilization time.
 sleep 60
 
-yum -y install kibana-5.6.5 &>>$lgfile
+# And add the wazuh index to elasticsearch
+curl \
+https://raw.githubusercontent.com/wazuh/wazuh/3.2/extensions/elasticsearch/wazuh-elastic6-template-alerts.json \
+| \
+curl \
+-XPUT \
+'http://127.0.0.1:9200/_template/wazuh' \
+-H 'Content-Type: application/json' -d @-
+
+yum -y install kibana-6.2.3 &>>$lgfile
 sed -r -i 's/^#server.host.*/server.host:\ \"localhost\"/g' /etc/kibana/kibana.yml
 
 systemctl start kibana
 systemctl enable kibana
+
+curl http://127.0.0.1:9200/?pretty &>>$lgfile
 
 yum -y install nginx httpd-tools &>>$lgfile
 
@@ -199,55 +195,55 @@ events {
     worker_connections 1024;
 }
 http {
-  client_max_body_size 1000m;
-  log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+ client_max_body_size 1000m;
+ log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
                     '\$status \$body_bytes_sent "\$http_referer" '
                     '"\$http_user_agent" "\$http_x_forwarded_for"';
 
-   access_log  /var/log/nginx/access.log  main;
-   sendfile            on;
-   tcp_nopush          on;
-   tcp_nodelay         on;
-   keepalive_timeout   65;
-   types_hash_max_size 2048;
-   include             /etc/nginx/mime.types;
-   default_type        application/octet-stream;
-   include /etc/nginx/conf.d/*.conf;
-   server {
-      listen       80 default_server;
-      listen       [::]:80 default_server;
+ access_log  /var/log/nginx/access.log  main;
+ sendfile on;
+ tcp_nopush on;
+ tcp_nodelay on;
+ keepalive_timeout 65;
+ types_hash_max_size 2048;
+ include /etc/nginx/mime.types;
+ default_type application/octet-stream;
+ include /etc/nginx/conf.d/*.conf;
+ server {
+  listen  80 default_server;
+  listen  [::]:80 default_server;
 
-      server_name _;
-      auth_basic "Restricted Access";
+  server_name _;
+  auth_basic "Restricted Access";
+  auth_basic_user_file /etc/nginx/htpasswd.users;
+
+  location / {
+   proxy_http_version 1.1;
+   proxy_set_header Upgrade \$http_upgrade;
+   proxy_set_header Connection 'upgrade';
+   proxy_set_header Host \$host;
+   proxy_pass http://127.0.0.1:5601;
+  }
+ }
+ server {
+  listen 443 ssl http2 default_server;
+  listen [::]:443 ssl http2 default_server;
+  ssl_certificate "/etc/pki/nginx/server.crt";
+  ssl_certificate_key "/etc/pki/nginx/private/server.key";
+  include /etc/nginx/default.d/sslconfig.conf;
+
+  server_name _;
+  auth_basic "Restricted Access";
       auth_basic_user_file /etc/nginx/htpasswd.users;
 
-      location / {
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_pass http://127.0.0.1:5601;
-     }
-   }
-   server {
-      listen       443 ssl http2 default_server;
-      listen       [::]:443 ssl http2 default_server;
-      ssl_certificate "/etc/pki/nginx/server.crt";
-      ssl_certificate_key "/etc/pki/nginx/private/server.key";
-      include /etc/nginx/default.d/sslconfig.conf;
-
-      server_name _;
-      auth_basic "Restricted Access";
-      auth_basic_user_file /etc/nginx/htpasswd.users;
-
-      location / {
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_pass http://127.0.0.1:5601;
-     }
-   }
+  location / {
+   proxy_http_version 1.1;
+   proxy_set_header Upgrade \$http_upgrade;
+   proxy_set_header Connection 'upgrade';
+   proxy_set_header Host \$host;
+   proxy_pass http://127.0.0.1:5601;
+  }
+ }
 }
 EOF
 
@@ -271,7 +267,7 @@ chown nginx.nginx /etc/pki/nginx/private/server.key
 systemctl restart nginx
 systemctl enable nginx
 
-yum -y install logstash-5.6.5 &>>$lgfile
+yum -y install logstash-6.2.3 &>>$lgfile
 
 mkdir /etc/pki/CA-ELK
 
@@ -298,12 +294,14 @@ cp /etc/pki/CA-ELK/ca.crt /etc/pki/ca-trust/source/anchors/
 cd /
 update-ca-trust &>>$lgfile
 
-curl -so /etc/logstash/wazuh-elastic5-template.json \
-https://raw.githubusercontent.com/wazuh/wazuh/2.1/extensions/elasticsearch/wazuh-elastic5-template.json \
-&>>$lgfile
-
-
 cat<<EOF >/etc/logstash/conf.d/01-wazuh.conf
+input {
+ file {
+  type => "wazuh-alerts"
+  path => "/var/ossec/logs/alerts/alerts.json"
+  codec => "json"
+ }
+}
 input {
  beats {
   port => 5044
@@ -315,16 +313,21 @@ input {
   ssl_verify_mode => "none"
  }
 }
-input {
- file {
-  type => "wazuh-alerts"
-  path => "/var/ossec/logs/alerts/alerts.json"
-  codec => "json"
+filter {
+ if [data][srcip] {
+  mutate {
+   add_field => [ "@src_ip", "%{[data][srcip]}" ]
+  }
+ }
+ if [data][aws][sourceIPAddress] {
+  mutate {
+   add_field => [ "@src_ip", "%{[data][aws][sourceIPAddress]}" ]
+  }
  }
 }
 filter {
  geoip {
-  source => "srcip"
+  source => "@src_ip"
   target => "GeoLocation"
   fields => ["city_name", "continent_code", "country_code2", "country_name", "region_name", "location"]
  }
@@ -333,38 +336,34 @@ filter {
   target => "@timestamp"
  }
  mutate {
-  remove_field => [ "timestamp", "beat", "fields", "input_type", "tags", "count", "@version", "log", "offset", "type"]
+  remove_field => [ "timestamp", "beat", "input_type", "tags", "count", "@version", "log", "offset", "type","@src_ip"]
  }
 }
 EOF
 
 cat<<EOF >/etc/logstash/conf.d/10-syslog-filter.conf
 filter {
-  if [type] == "syslog" {
-    grok {
-      match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
-      add_field => [ "received_at", "%{@timestamp}" ]
-      add_field => [ "received_from", "%{host}" ]
-    }
-    syslog_pri { }
-    date {
-     match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
-    }
+ if [type] == "syslog" {
+  grok {
+   match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
+   add_field => [ "received_at", "%{@timestamp}" ]
+   add_field => [ "received_from", "%{host}" ]
   }
+  syslog_pri { }
+  date {
+   match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
+  }
+ }
 }
 EOF
 
 cat<<EOF >/etc/logstash/conf.d/30-elasticsearch-output.conf
 output {
-  elasticsearch {
-    hosts => ["127.0.0.1:9200"]
-    sniffing => true
-    manage_template => false
-    index => "wazuh-alerts-%{+YYYY.MM.dd}"
-    document_type => "wazuh"
-    template => "/etc/logstash/wazuh-elastic5-template.json"
-    template_overwrite => true
-  }
+ elasticsearch {
+  hosts => ["127.0.0.1:9200"]
+  index => "wazuh-alerts-3.x-%{+YYYY.MM.dd}"
+  document_type => "wazuh"
+ }
 }
 EOF
 
@@ -379,7 +378,7 @@ systemctl enable logstash
 sleep 60
 sync
 
-yum -y install wazuh-manager-2.1.1
+yum -y install wazuh-manager-3.2.1
 systemctl enable wazuh-manager
 systemctl restart wazuh-manager
 
@@ -391,11 +390,13 @@ yum -y install nodejs &>>$lgfile
 
 yum -y install python2 wazuh-api &>>$lgfile
 
-systemctl enable wazuh-api-2.1.1
+systemctl enable wazuh-api-3.2.1
 systemctl restart wazuh-api
 
+export NODE_OPTIONS="--max-old-space-size=3072"
+
 echo "Installing WAZUHAPP Plugin. This will take several minutes to finish. Please wait" &>>$lgfile
-/usr/share/kibana/bin/kibana-plugin install https://packages.wazuh.com/wazuhapp/wazuhapp-2.1.1_5.6.5.zip &>>$lgfile
+/usr/share/kibana/bin/kibana-plugin install https://packages.wazuh.com/wazuhapp/wazuhapp-3.2.1_6.2.3.zip &>>$lgfile
 
 cd /
 
@@ -405,12 +406,10 @@ cd /
 
 systemctl restart wazuh-api
 systemctl enable wazuh-api
-
 systemctl restart kibana
-
 sleep 30
 
-yum -y install filebeat-5.6.5 &>>$lgfile
+yum -y install filebeat-6.2.3 &>>$lgfile
 
 cat<<EOF >/etc/filebeat/filebeat.yml
 filebeat:
@@ -433,20 +432,6 @@ systemctl daemon-reload
 systemctl restart filebeat
 systemctl enable filebeat
 
-curl \
-https://raw.githubusercontent.com/wazuh/wazuh-kibana-app/2.1/server/startup/integration_files/template_file.json \
-| \
-curl \
--XPUT \
-'http://localhost:9200/_template/wazuh' \
--H 'Content-Type: application/json' -d @-
-
-curl \
-https://raw.githubusercontent.com/wazuh/wazuh-kibana-app/2.1/server/startup/integration_files/alert_sample.json \
-| \
-curl -XPUT "http://localhost:9200/wazuh-alerts-"`date +%Y.%m.%d`"/wazuh/sample" \
--H 'Content-Type: application/json' -d @-
-
 systemctl status elasticsearch &>>$lgfile
 systemctl status kibana &>>$lgfile
 systemctl status nginx &>>$lgfile
@@ -460,9 +445,8 @@ yum versionlock elasticsearch* &>>$lgfile
 yum versionlock kibana* &>>$lgfile
 yum versionlock logstash* &>>$lgfile
 yum versionlock wazuh* &>>$lgfile
+yum versionlock filebeat* &>>$lgfile
 yum versionlock list &>>$lgfile
-
-
 
 if [ `ss -ltn|grep -c :80` -gt "0" ] && [ `ss -ltn|grep -c :9200` -gt "0" ] && [ `ss -ltn|grep -c :5044` -gt "0" ] && [ `ss -ltn|grep -c :55000` -gt "0" ]
 then
@@ -471,7 +455,5 @@ then
 else
 	echo "WAZUH Server install failed" &>>$lgfile
 fi
-
 echo "End Date/Time: `date`" &>>$lgfile
-
 #END

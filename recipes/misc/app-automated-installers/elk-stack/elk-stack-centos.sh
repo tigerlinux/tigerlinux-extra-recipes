@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # ELK Stack Server Setup for Centos 7 64 bits
 # (ELK = ElasticSearch, Logstack, Kibana)
-# Release 1.5
+# Release 1.6
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -108,11 +108,11 @@ case $javaversion in
 	--no-cookies \
 	--no-check-certificate \
 	--header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
-	"http://download.oracle.com/otn-pub/java/jdk/8u162-b12/0da788060d494f5095bf8624735fa2f1/jdk-8u162-linux-x64.rpm" \
-	-O /root/jdk-8u162-linux-x64.rpm &>>$lgfile
-	yum -y localinstall /root/jdk-8u162-linux-x64.rpm &>>$lgfile
+	"http://download.oracle.com/otn-pub/java/jdk/8u171-b11/512cd62ec5174c3487ac17c61aaa89e8/jdk-8u171-linux-x64.rpm" \
+	-O /root/jdk-8u171-linux-x64.rpm &>>$lgfile
+	yum -y localinstall /root/jdk-8u171-linux-x64.rpm &>>$lgfile
 	sync
-	rm -f /root/jdk-8u162-linux-x64.rpm
+	rm -f /root/jdk-8u171-linux-x64.rpm
 	if [ `which java 2>/dev/null|wc -l` == "0" ]
 	then
 		yum -y install java-1.8.0-openjdk &>>$lgfile
@@ -129,9 +129,9 @@ esac
 rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch &>>$lgfile
 
 cat<<EOF>/etc/yum.repos.d/elasticsearch.repo
-[elasticsearch-5.x]
-name=Elasticsearch repository for 5.x packages
-baseurl=https://artifacts.elastic.co/packages/5.x/yum
+[elasticsearch-6.x]
+name=Elasticsearch repository for 6.x packages
+baseurl=https://artifacts.elastic.co/packages/6.x/yum
 gpgcheck=1
 gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
 enabled=1
@@ -283,6 +283,7 @@ cat<<EOF >/etc/logstash/conf.d/02-beats-input.conf
 input {
  beats {
   port => 5044
+  codec => "json_lines"
   ssl => true
   ssl_certificate_authorities => "/etc/pki/CA-ELK/ca.crt"
   ssl_certificate => "/etc/pki/CA-ELK/server.pem"
@@ -290,21 +291,48 @@ input {
   ssl_verify_mode => "none"
  }
 }
+filter {
+ if [data][srcip] {
+  mutate {
+   add_field => [ "@src_ip", "%{[data][srcip]}" ]
+  }
+ }
+ if [data][aws][sourceIPAddress] {
+  mutate {
+   add_field => [ "@src_ip", "%{[data][aws][sourceIPAddress]}" ]
+  }
+ }
+}
+filter {
+ geoip {
+  source => "@src_ip"
+  target => "GeoLocation"
+  fields => ["city_name", "continent_code", "country_code2", "country_name", "region_name", "location"]
+ }
+ date {
+  match => ["timestamp", "ISO8601"]
+  target => "@timestamp"
+ }
+ mutate {
+  remove_field => [ "timestamp", "beat", "input_type", "tags", "count", "@version", "log", "offset", "type","@src_ip"]
+ }
+}
+EOF
 EOF
 
 cat<<EOF >/etc/logstash/conf.d/10-syslog-filter.conf
 filter {
-  if [type] == "syslog" {
-    grok {
-      match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
-      add_field => [ "received_at", "%{@timestamp}" ]
-      add_field => [ "received_from", "%{host}" ]
-    }
-    syslog_pri { }
-    date {
-     match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
-    }
+ if [type] == "syslog" {
+  grok {
+   match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
+   add_field => [ "received_at", "%{@timestamp}" ]
+   add_field => [ "received_from", "%{host}" ]
   }
+  syslog_pri { }
+  date {
+   match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
+  }
+ }
 }
 EOF
 
