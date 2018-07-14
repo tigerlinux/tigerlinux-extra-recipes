@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # UniFi controller with nginx front-end
 # For Centos 7 64 bits.
-# Release 1.0
+# Release 1.1
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -67,6 +67,9 @@ systemctl restart firewalld
 firewall-cmd --zone=public --add-service=http --permanent
 firewall-cmd --zone=public --add-service=https --permanent
 firewall-cmd --zone=public --add-service=ssh --permanent
+firewall-cmd --zone=public --add-port=8080/tcp --permanent
+firewall-cmd --zone=public --add-port=8880/tcp --permanent
+firewall-cmd --zone=public --add-port=8443/tcp --permanent
 firewall-cmd --reload
 
 echo "net.ipv4.tcp_timestamps = 0" > /etc/sysctl.d/10-disable-timestamps.conf
@@ -289,7 +292,7 @@ yum install -y mongodb-org &>>$lgfile
 systemctl stop mongod.service
 systemctl disable mongod.service
 
-wget https://www.ubnt.com/downloads/unifi/5.6.30/UniFi.unix.zip -O /root/unifi.zip &>>$lgfile
+wget https://www.ubnt.com/downloads/unifi/5.8.24/UniFi.unix.zip -O /root/unifi.zip &>>$lgfile
 unzip /root/unifi.zip -d /opt/ &>>$lgfile
 useradd -c "UniFi System User" -d /opt/UniFi -s /bin/bash unifi &>>$lgfile
 chown -R unifi.unifi /opt/UniFi

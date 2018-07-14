@@ -2,10 +2,10 @@
 
 ## The Components.
 
-This script will install the UniFi 5.6.x controller on Centos 7 with the following components:
+This script will install the UniFi 5.x.x controller on Centos 7 with the following components:
 
 - MongoDB 3.4.
-- UniFi series 5.6 latest (5.6.30 at the moment of producing this script).
+- UniFi series 5.8 latest (5.8.24 at the moment of producing this script).
 - OpenJDK 1.8.
 - Nginx 1.12.
 
@@ -32,6 +32,7 @@ FirewallD is configured to allow traffic for the following ports only (incoming 
 - 80 tcp (http).
 - 443 tcp (https).
 - 22 tcp (ssh).
+- UniFi specific (tcp): 8080, 8880, 8443.
 
 **NOTE: All http requests will be autoforwarded to https!**
 

@@ -88,15 +88,13 @@ fi
 yum -y install epel-release &>>$lgfile
 yum -y install device-mapper-persistent-data &>>$lgfile
 
-wget \
---no-cookies \
---no-check-certificate \
---header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
-"http://download.oracle.com/otn-pub/java/jdk/8u171-b11/512cd62ec5174c3487ac17c61aaa89e8/jdk-8u171-linux-x64.rpm" \
--O /root/jdk-8u171-linux-x64.rpm &>>$lgfile
-yum -y localinstall /root/jdk-8u171-linux-x64.rpm &>>$lgfile
+curl \
+	-Lo /root/jdk-8u172-linux-x64.rpm \
+	--header "Cookie: oraclelicense=accept-securebackup-cookie" \
+	"https://download.oracle.com/otn-pub/java/jdk/8u172-b11/a58eab1ec242421181065cdc37240b08/jdk-8u172-linux-x64.rpm" &>>$lgfile
+yum -y localinstall /root/jdk-8u172-linux-x64.rpm &>>$lgfile
 sync
-rm -f /root/jdk-8u171-linux-x64.rpm
+rm -f /root/jdk-8u172-linux-x64.rpm
 if [ `which java 2>/dev/null|wc -l` == "0" ]
 then
 	yum -y install java-1.8.0-openjdk &>>$lgfile
@@ -133,7 +131,7 @@ echo $JAVA_HOME &>>$lgfile
 ln -s /usr/java/latest /usr/lib/jvm
 export JAVA_HOME="/usr/java/latest/jre"
 
-wget http://www-us.apache.org/dist/tomcat/tomcat-8/v8.5.29/bin/apache-tomcat-8.5.29.tar.gz -O /root/apache-tomcat.tar.gz &>>$lgfile
+wget http://www-us.apache.org/dist/tomcat/tomcat-8/v8.5.32/bin/apache-tomcat-8.5.32.tar.gz -O /root/apache-tomcat.tar.gz &>>$lgfile
 
 tar -xzvf /root/apache-tomcat.tar.gz -C /opt/ &>>$lgfile
 mv /opt/apache-tomcat-* /opt/tomcat

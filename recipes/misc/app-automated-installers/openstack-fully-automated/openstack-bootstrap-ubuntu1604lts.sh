@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # OpenStack bootstrap script - systemd-installer mode
-# Rel 1.2
+# Rel 1.3
 # For usage on ubuntu1604lts 64 bits machines.
 #
 
@@ -105,7 +105,7 @@ fi
 
 apt-get -y install software-properties-common &>>$lgfile
 apt-get -y install ubuntu-cloud-keyring &>>$lgfile
-add-apt-repository -y cloud-archive:pike &>>$lgfile
+add-apt-repository -y cloud-archive:queens &>>$lgfile
 
 apt-get -y update &>>$lgfile
 
@@ -165,7 +165,7 @@ then
 	echo "loop" >> /etc/modules
 fi
 	
-osinstaller="https://github.com/tigerlinux/openstack-pike-installer-ubuntu1604lts.git"
+osinstaller="https://github.com/tigerlinux/openstack-queens-installer-ubuntu1604lts.git"
 
 git clone $osinstaller /usr/local/osinstaller
 

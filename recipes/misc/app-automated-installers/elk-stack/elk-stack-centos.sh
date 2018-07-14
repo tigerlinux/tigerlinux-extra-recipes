@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # ELK Stack Server Setup for Centos 7 64 bits
 # (ELK = ElasticSearch, Logstack, Kibana)
-# Release 1.6
+# Release 1.7
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -104,15 +104,13 @@ firewall-cmd --reload
 
 case $javaversion in
 "oraclejdk")
-	wget \
-	--no-cookies \
-	--no-check-certificate \
-	--header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
-	"http://download.oracle.com/otn-pub/java/jdk/8u171-b11/512cd62ec5174c3487ac17c61aaa89e8/jdk-8u171-linux-x64.rpm" \
-	-O /root/jdk-8u171-linux-x64.rpm &>>$lgfile
-	yum -y localinstall /root/jdk-8u171-linux-x64.rpm &>>$lgfile
+	curl \
+		-Lo /root/jdk-8u172-linux-x64.rpm \
+		--header "Cookie: oraclelicense=accept-securebackup-cookie" \
+		"https://download.oracle.com/otn-pub/java/jdk/8u172-b11/a58eab1ec242421181065cdc37240b08/jdk-8u172-linux-x64.rpm" &>>$lgfile
+	yum -y localinstall /root/jdk-8u172-linux-x64.rpm &>>$lgfile
 	sync
-	rm -f /root/jdk-8u171-linux-x64.rpm
+	rm -f /root/jdk-8u172-linux-x64.rpm
 	if [ `which java 2>/dev/null|wc -l` == "0" ]
 	then
 		yum -y install java-1.8.0-openjdk &>>$lgfile

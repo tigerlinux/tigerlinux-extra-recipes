@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # OpenStack bootstrap script - SINGLE-NIC Installation mode
-# Rel 1.2
+# Rel 1.3
 # For usage on centos7 64 bits machines with a single usable NIC
 # (bonded NIC's supported too - specially those from Packet.net)
 #
@@ -109,7 +109,7 @@ done
 yum -y clean all
 modprobe loop
 
-yum -y install epel-release centos-release-openstack-pike &>>$lgfile
+yum -y install epel-release centos-release-openstack-queens &>>$lgfile
 yum clean all
 
 cat <<EOF >/etc/sysctl.d/10-openstack-sysctl.conf
@@ -193,7 +193,7 @@ cat <<EOF >/etc/sysconfig/modules/loop.modules
 EOF
 chmod 755 /etc/sysconfig/modules/loop.modules
 
-osinstaller="https://github.com/tigerlinux/openstack-pike-installer-centos7.git"
+osinstaller="https://github.com/tigerlinux/openstack-queens-installer-centos7.git"
 
 git clone $osinstaller /usr/local/osinstaller
 
