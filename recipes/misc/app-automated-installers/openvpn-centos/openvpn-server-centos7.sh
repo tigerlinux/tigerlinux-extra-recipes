@@ -5,7 +5,7 @@
 # http://tigerlinux.github.io
 # https://github.com/tigerlinux
 # OpenVPN Server installation script
-# Rel 1.0
+# Rel 1.1
 # For usage on centos7 64 bits machines.
 #
 
@@ -332,6 +332,10 @@ firewall-cmd --permanent --zone=trusted --add-masquerade
 export primarynic=`ip route get 1|grep dev|awk '{print $5}'`
 firewall-cmd --permanent --direct --passthrough ipv4 -t nat -A POSTROUTING -s  172.16.27.0/24 -o $primarynic -j MASQUERADE
 firewall-cmd --reload
+
+echo "/usr/bin/firewall-cmd --permanent --zone=trusted --add-interface=tun0" >> /etc/rc.local
+systemctl enable rc-local
+chmod 755 /etc/rc.d/rc.local
 
 iptables -v -L -n &>>$lgfile
 iptables -v -L -n -t nat &>>$lgfile
