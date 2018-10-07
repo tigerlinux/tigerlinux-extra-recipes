@@ -6,7 +6,7 @@
 # https://github.com/tigerlinux
 # WAZUH Server Setup for Centos 7 64 bits
 # (Includes ELK Server Stack)
-# Release 1.7
+# Release 1.8
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -102,12 +102,13 @@ firewall-cmd --zone=public --add-port=55000/tcp --permanent
 firewall-cmd --reload
 
 curl \
-	-Lo /root/jdk-8u172-linux-x64.rpm \
+	-Lo /root/jdk-8u181-linux-x64.rpm \
 	--header "Cookie: oraclelicense=accept-securebackup-cookie" \
-	"https://download.oracle.com/otn-pub/java/jdk/8u172-b11/a58eab1ec242421181065cdc37240b08/jdk-8u172-linux-x64.rpm" &>>$lgfile
-yum -y localinstall /root/jdk-8u172-linux-x64.rpm &>>$lgfile
+	"https://download.oracle.com/otn-pub/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.rpm" &>>$lgfile
+
+yum -y localinstall /root/jdk-8u181-linux-x64.rpm &>>$lgfile
 sync
-rm -f /root/jdk-8u172-linux-x64.rpm
+rm -f /root/jdk-8u181-linux-x64.rpm
 if [ `which java 2>/dev/null|wc -l` == "0" ]
 then
 	yum -y install java-1.8.0-openjdk &>>$lgfile
@@ -141,7 +142,7 @@ sysctl -p /etc/sysctl.d/10-disable-timestamps.conf
 
 yum -y update --exclude=kernel* &>>$lgfile
 
-yum -y install elasticsearch-6.3.1 &>>$lgfile
+yum -y install elasticsearch-6.4.0 &>>$lgfile
 
 sed -r -i 's/^#network.host.*/network.host:\ 127.0.0.1/g' /etc/elasticsearch/elasticsearch.yml
 sed -r -i 's/^#http.port.*/http.port:\ 9200/g' /etc/elasticsearch/elasticsearch.yml
@@ -153,14 +154,14 @@ sleep 60
 
 # And add the wazuh index to elasticsearch
 curl \
-https://raw.githubusercontent.com/wazuh/wazuh/3.3/extensions/elasticsearch/wazuh-elastic6-template-alerts.json \
+https://raw.githubusercontent.com/wazuh/wazuh/3.6/extensions/elasticsearch/wazuh-elastic6-template-alerts.json \
 | \
 curl \
 -XPUT \
 'http://127.0.0.1:9200/_template/wazuh' \
 -H 'Content-Type: application/json' -d @-
 
-yum -y install kibana-6.3.1 &>>$lgfile
+yum -y install kibana-6.4.0 &>>$lgfile
 sed -r -i 's/^#server.host.*/server.host:\ \"localhost\"/g' /etc/kibana/kibana.yml
 
 systemctl start kibana
@@ -265,7 +266,7 @@ chown nginx.nginx /etc/pki/nginx/private/server.key
 systemctl restart nginx
 systemctl enable nginx
 
-yum -y install logstash-6.3.1 &>>$lgfile
+yum -y install logstash-6.4.0 &>>$lgfile
 
 mkdir /etc/pki/CA-ELK
 
@@ -376,25 +377,25 @@ systemctl enable logstash
 sleep 60
 sync
 
-yum -y install wazuh-manager-3.3.1
+yum -y install wazuh-manager-3.6.1 &>>$lgfile
 systemctl enable wazuh-manager
 systemctl restart wazuh-manager
 
 usermod -a -G ossec logstash
 
-curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -
+curl --silent --location https://rpm.nodesource.com/setup_8.x | bash -
 
 yum -y install nodejs &>>$lgfile
 
-yum -y install python2 wazuh-api &>>$lgfile
+yum -y install python2 wazuh-api-3.6.1 &>>$lgfile
 
-systemctl enable wazuh-api-3.3.1
+systemctl enable wazuh-api &>>$lgfile
 systemctl restart wazuh-api
 
 export NODE_OPTIONS="--max-old-space-size=3072"
 
 echo "Installing WAZUHAPP Plugin. This will take several minutes to finish. Please wait" &>>$lgfile
-/usr/share/kibana/bin/kibana-plugin install https://packages.wazuh.com/wazuhapp/wazuhapp-3.3.1_6.3.1.zip &>>$lgfile
+/usr/share/kibana/bin/kibana-plugin install https://packages.wazuh.com/wazuhapp/wazuhapp-3.6.1_6.4.0.zip &>>$lgfile
 
 cd /
 
@@ -407,7 +408,7 @@ systemctl enable wazuh-api
 systemctl restart kibana
 sleep 30
 
-yum -y install filebeat-6.3.1 &>>$lgfile
+yum -y install filebeat-6.4.0 &>>$lgfile
 
 cat<<EOF >/etc/filebeat/filebeat.yml
 filebeat:
